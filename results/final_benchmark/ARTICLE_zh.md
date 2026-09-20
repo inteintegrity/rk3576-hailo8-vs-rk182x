@@ -96,7 +96,9 @@ YOLO26n** 分别放到三种加速器上跑，单路与多路各测一轮，看�
    官方标称的 155 FPS 在此链路下不可达（实测 Hailo 官方 HEF 为 52.5 FPS）。
 5. Hailo-8 用官方异步管线，RK 两端用各自的同步绑定（Python 侧无异步接口），
    因此三者的"仅推理"口径不完全同源；这是各平台**当前可得的最佳路径**对比。
-6. 三份带标注视频随结果一起发布（`results/final_benchmark/<设备>/annotated.mp4`）。
+6. 三份带标注视频随结果一起发布（`results/final_benchmark/<设备>/annotated.mp4`），
+   每台设备的第 200 帧截图与它的像素校验报告同目录发布
+   （`<设备>/frame200.png`、`<设备>/frame200_strip_check.json`）。
    其中 RK182x 的画面是用那次运行记录的逐帧检测结果重新渲染的（模块此时已被换下），
    检测框与置信度均来自该次运行本身。
 7. 数据与图表均由脚本从原始 JSON 生成：`common/make_final_figures.py`、

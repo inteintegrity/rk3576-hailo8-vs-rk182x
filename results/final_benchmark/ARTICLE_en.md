@@ -113,7 +113,9 @@ module), not more streams per module — a different scaling model from the Rock
    synchronous bindings (no async API is exposed in Python), so the "inference only" columns are
    not fully like-for-like: each is that platform's best currently available path.
 6. The three annotated clips ship with the results
-   (`results/final_benchmark/<device>/annotated.mp4`). The RK182x one was re-rendered from that
+   (`results/final_benchmark/<device>/annotated.mp4`), together with each device's frame-200
+   screenshot and its pixel-level strip check (`<device>/frame200.png`,
+   `<device>/frame200_strip_check.json`). The RK182x clip was re-rendered from that
    run's recorded per-frame detections, because the module had already been swapped out of the
    slot; boxes and confidences are the run's own.
 7. Every figure is generated from the raw JSON by `common/make_final_figures.py` and
