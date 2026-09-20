@@ -18,22 +18,22 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 BENCH = ROOT / "results" / "final_benchmark"
-SHOTS = BENCH / "figures" / "screenshots"
 OUT = BENCH / "figures" / "runtime_osd.png"
 
+# each device keeps its own frame-200 screenshot next to its results
 FRAMES = [
-    "hailo8_yolo26n_frame200.png",
-    "rk3576_npu_yolo26n_frame200.png",
-    "rk182x_yolo26n_frame200.png",
+    BENCH / "hailo8" / "frame200.png",
+    BENCH / "rk3576_npu" / "frame200.png",
+    BENCH / "rk1820" / "frame200.png",
 ]
 
 
 def main() -> None:
     images = []
-    for name in FRAMES:
-        image = cv2.imread(str(SHOTS / name))
+    for path in FRAMES:
+        image = cv2.imread(str(path))
         if image is None:
-            raise SystemExit(f"cannot read {SHOTS / name}")
+            raise SystemExit(f"cannot read {path}")
         images.append(image)
     heights = {image.shape[0] for image in images}
     if len(heights) != 1:

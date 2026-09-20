@@ -48,7 +48,8 @@ rk182x/rk1820/   RK182x (RKNN3) runners and the official YOLO26 conversion recip
 rk3576/          Built-in NPU (RKNN2) runners, YOLO26 conversion, calibration set, stream derivation
 results/
   final_benchmark/   Deliverables: SUMMARY.md, both articles, single-stream and aggregate JSON,
-                     figures, verified runtime screenshots
+                     figures, and per device a frame-200 screenshot plus its pixel-level
+                     strip check (<device>/frame200.png, <device>/frame200_strip_check.json)
   final_benchmark/_syncmethod/   The older synchronous-API numbers, kept for comparison
 ```
 
