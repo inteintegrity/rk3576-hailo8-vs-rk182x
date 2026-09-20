@@ -1,0 +1,20 @@
+command=cd /home/seeed/hailo-vs-rk182x/python && ( /home/seeed/venvs/hailort-test/bin/python run_hailo.py --seconds 12 --out-dir /tmp/live26 --snapshot-every 6 > /tmp/live26.log 2>&1 & sleep 7; echo '--- MJPEG ---'; timeout 3 curl -s -o /tmp/p.bin -w 'http=%{http_code} bytes=%{size_download}\n' http://127.0.0.1:8080/; wait ); echo '=== 日志 ==='; cat /tmp/live26.log
+exit_code=0
+--- MJPEG ---
+=== 日志 ===
+[info] HEF yolo26n_hailo8_official.hef: input 640x640, raw heads (yolo26n/conv61, yolo26n/conv77, yolo26n/conv91, yolo26n/conv64, yolo26n/conv80, yolo26n/conv94)
+[info] MJPEG stream ready: http://<board-ip>:8080/
+[info] initialization successful, running real-time detection (Ctrl+C to stop)
+[live]  19.3 FPS (30-frame) /   6.9 avg | infer  27.7 ms, whole loop  58.4 ms | 0 detections
+[live]  18.4 FPS (30-frame) /  10.9 avg | infer  27.2 ms, whole loop  58.8 ms | 0 detections
+[live]  18.4 FPS (30-frame) /  12.4 avg | infer  24.1 ms, whole loop  56.6 ms | 0 detections
+[live]  18.8 FPS (30-frame) /  13.2 avg | infer  28.0 ms, whole loop  54.9 ms | 0 detections
+[live]  19.0 FPS (30-frame) /  13.7 avg | infer  24.6 ms, whole loop  51.2 ms | 0 detections
+[live]  19.0 FPS (30-frame) /  13.9 avg | infer  35.5 ms, whole loop  48.5 ms | 0 detections
+[live]  18.5 FPS (30-frame) /  14.0 avg | infer  28.1 ms, whole loop  53.8 ms | 0 detections
+[live]  18.5 FPS (30-frame) /  14.1 avg | infer  28.4 ms, whole loop  58.9 ms | 1 detections
+[live]  18.9 FPS (30-frame) /  14.3 avg | infer  25.0 ms, whole loop  51.1 ms | 0 detections
+[live]  19.2 FPS (30-frame) /  14.4 avg | infer  32.0 ms, whole loop  53.7 ms | 0 detections
+[live]  18.7 FPS (30-frame) /  14.4 avg | infer  30.1 ms, whole loop  47.7 ms | 0 detections
+[done] 175 frames in 12.4 s -> 14.13 FPS average, 0.069 detections/frame
+[done] json report: /tmp/live26/run_hailo_live_result.json

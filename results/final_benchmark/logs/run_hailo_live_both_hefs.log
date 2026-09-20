@@ -1,0 +1,18 @@
+command=cd /home/seeed/hailo-vs-rk182x/python && rm -rf /tmp/live26 /tmp/live8 && for HEF in /home/seeed/hailo-vs-rk182x/yolo26n_hailo8_official.hef /home/seeed/ugen300/models/yolov8n.hef; do echo "=== $HEF ==="; ( /home/seeed/venvs/hailort-test/bin/python run_hailo.py --hef $HEF --seconds 10 --out-dir /tmp/live_test --snapshot-every 5 --serve-port 8081 > /tmp/live.log 2>&1 & sleep 6; timeout 3 curl -s -D - -o /dev/null http://127.0.0.1:8081/ | head -2; wait ); tail -6 /tmp/live.log; done
+exit_code=0
+=== /home/seeed/hailo-vs-rk182x/yolo26n_hailo8_official.hef ===
+HTTP/1.0 200 OK
+Server: BaseHTTP/0.6 Python/3.11.2
+[live]  19.2 FPS (30-frame) /  15.2 avg | infer  28.0 ms, whole loop  56.2 ms | 0 detections
+[live]  19.2 FPS (30-frame) /  15.2 avg | infer  33.0 ms, whole loop  60.6 ms | 0 detections
+[live]  18.2 FPS (30-frame) /  15.2 avg | infer  28.0 ms, whole loop  53.8 ms | 0 detections
+[live]  18.4 FPS (30-frame) /  15.2 avg | infer  31.2 ms, whole loop  61.4 ms | 0 detections
+[done] 153 frames in 10.2 s -> 14.935 FPS average, 0.02 detections/frame
+[done] json report: /tmp/live_test/run_hailo_live_result.json
+=== /home/seeed/ugen300/models/yolov8n.hef ===
+    with ExceptionWrapper():
+  File "/home/seeed/venvs/hailort-test/lib/python3.11/site-packages/hailo_platform/pyhailort/pyhailort.py", line 122, in __exit__
+    self._raise_indicative_status_exception(value)
+  File "/home/seeed/venvs/hailort-test/lib/python3.11/site-packages/hailo_platform/pyhailort/pyhailort.py", line 172, in _raise_indicative_status_exception
+    raise self.create_exception_from_status(error_code) from libhailort_exception
+hailo_platform.pyhailort.pyhailort.HailoRTHEFNotCompatibleWithDevice: HEF file is not compatible with device. See hailort.log for more information

@@ -1,0 +1,24 @@
+{
+  "clip": "out/final/rk3576_npu/rk3576_npu_yolo26n_result.mp4",
+  "frame": 200,
+  "banner_line_1": "RK3576 NPU | YOLO26n INT8",
+  "banner_line_2": "FPS 34.9 infer only / 23.6 this run",
+  "strip_wh": [
+    480,
+    78
+  ],
+  "banner_pixels_changed_fraction": 0.007318,
+  "white_text_pixel_fraction": 0.14087,
+  "ink_jaccard_to_expected": 0.00504,
+  "best_rival_ink_jaccard": 0.01416,
+  "best_rival_text": [
+    "RK3578 NPU | YOLO26n INT8",
+    "FPS 34.9 infer only / 23.6 this run"
+  ],
+  "frame_wh": [
+    640,
+    640
+  ],
+  "cv2_version": "4.11.0",
+  "verdict": "expected text wins"
+}

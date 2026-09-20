@@ -1,0 +1,8 @@
+command=cd /home/seeed/hailo-vs-rk182x/python && P=/home/seeed/venvs/hailort-test/bin/python; V=/home/seeed/hailo-vs-rk182x/videos/derived/test_640.mp4; H=/home/seeed/hailo-vs-rk182x/yolo26n_hailo8_official.hef; echo '=== 基线：串行（原实现）==='; $P run_hailo_streams_aggregate.py --hef $H --video $V --streams 8 --frames 120 --batch 8 2>&1 | tail -1; echo '=== 重叠解码 batch 8 ==='; $P run_hailo_streams_aggregate.py --hef $H --video $V --streams 8 --frames 120 --batch 8 --overlap --decode-threads 2 2>&1 | tail -1; echo '=== 重叠解码 batch 16 ==='; $P run_hailo_streams_aggregate.py --hef $H --video $V --streams 8 --frames 120 --batch 16 --overlap --decode-threads 2 2>&1 | tail -1
+exit_code=0
+=== 基线：串行（原实现）===
+}
+=== 重叠解码 batch 8 ===
+{"backend": "hailo8", "hef": "yolo26n_hailo8_official.hef", "video": "test_640.mp4", "streams": 8, "frames_per_stream_target": 120, "batch_frames_per_infer": 8, "overlap": true, "decode_threads": 2, "frames_processed": 960, "wall_seconds": 60.744, "aggregate_fps": 15.804, "per_stream_fps": 1.98, "per_stream_detections": [1249, 1226, 1214, 1200, 1180, 1162, 1154, 1142]}
+=== 重叠解码 batch 16 ===
+{"backend": "hailo8", "hef": "yolo26n_hailo8_official.hef", "video": "test_640.mp4", "streams": 8, "frames_per_stream_target": 120, "batch_frames_per_infer": 16, "overlap": true, "decode_threads": 2, "frames_processed": 960, "wall_seconds": 59.022, "aggregate_fps": 16.265, "per_stream_fps": 2.03, "per_stream_detections": [1249, 1226, 1214, 1200, 1180, 1162, 1154, 1142]}

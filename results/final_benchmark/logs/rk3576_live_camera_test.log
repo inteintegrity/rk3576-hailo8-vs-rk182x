@@ -1,0 +1,17 @@
+command=cd /home/seeed/hailo-vs-rk182x/python && rm -rf /tmp/rklive && ( /home/seeed/rockchip-yolo11-quant-benchmark/.venv/bin/python run_rk3576.py --seconds 12 --out-dir /tmp/rklive --snapshot-every 6 --serve-port 8090 > /tmp/rklive.log 2>&1 & sleep 8; timeout 3 curl -s -D - -o /dev/null http://127.0.0.1:8090/ | head -1; wait ); grep -v 'RKNN\|pkg_resources\|rknn-toolkit' /tmp/rklive.log | tail -10; ls -l /tmp/rklive/
+exit_code=0
+HTTP/1.0 200 OK
+[live]  26.1 FPS (30-frame) /  25.5 avg | wait-for-frame   0.5 ms, infer  24.6 ms, whole loop  38.2 ms | 1 detections | slow frames so far 0
+[live]  25.4 FPS (30-frame) /  25.4 avg | wait-for-frame   0.6 ms, infer  26.9 ms, whole loop  40.3 ms | 1 detections | slow frames so far 0
+[live]  25.1 FPS (30-frame) /  25.3 avg | wait-for-frame   0.5 ms, infer  29.8 ms, whole loop  42.3 ms | 2 detections | slow frames so far 0
+[live]  25.9 FPS (30-frame) /  25.4 avg | wait-for-frame   0.5 ms, infer  26.6 ms, whole loop  40.6 ms | 1 detections | slow frames so far 0
+[live]  25.7 FPS (30-frame) /  25.4 avg | wait-for-frame   0.6 ms, infer  21.0 ms, whole loop  33.2 ms | 0 detections | slow frames so far 0
+[live]  25.7 FPS (30-frame) /  25.5 avg | wait-for-frame   0.5 ms, infer  25.2 ms, whole loop  38.1 ms | 0 detections | slow frames so far 0
+[live]  25.9 FPS (30-frame) /  25.5 avg | wait-for-frame   0.6 ms, infer  21.7 ms, whole loop  36.3 ms | 2 detections | slow frames so far 0
+[live]  26.0 FPS (30-frame) /  25.5 avg | wait-for-frame   0.7 ms, infer  24.8 ms, whole loop  39.7 ms | 1 detections | slow frames so far 0
+[done] 281 frames in 12.2 s: 25.569 FPS measured (boxes drawn), 22.973 FPS wall clock, 1.295 detections/frame
+[done] json report: /tmp/rklive/run_rk3576_live_result.json
+total 152
+-rw-r--r-- 1 seeed seeed  1039  9月 20 15:01 run_rk3576_live_result.json
+-rw-r--r-- 1 seeed seeed 73310  9月 20 15:01 snapshot_00006.0s.jpg
+-rw-r--r-- 1 seeed seeed 74026  9月 20 15:01 snapshot_00012.0s.jpg

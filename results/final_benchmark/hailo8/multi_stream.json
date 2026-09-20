@@ -1,0 +1,39 @@
+{
+  "backend": "hailo",
+  "video": "test_640.mp4",
+  "frames_per_stream": 200,
+  "model_family": "yolo26",
+  "npu_cores": 1,
+  "results": {
+    "1": {
+      "instances": 1,
+      "streams_completed": 1,
+      "frames_total": 200,
+      "window_seconds": 9.151,
+      "aggregate_fps": 21.86,
+      "per_stream_fps": [
+        21.86
+      ],
+      "per_stream_mean_infer_ms": [
+        32.18
+      ],
+      "detections_total": 1884,
+      "errors": []
+    },
+    "2": {
+      "instances": 2,
+      "streams_completed": 1,
+      "frames_total": 200,
+      "window_seconds": 8.683,
+      "aggregate_fps": 23.03,
+      "per_stream_fps": [
+        23.03
+      ],
+      "per_stream_mean_infer_ms": [
+        30.91
+      ],
+      "detections_total": 1884,
+      "errors": []
+    }
+  }
+}

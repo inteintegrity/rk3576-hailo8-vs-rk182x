@@ -1,0 +1,13 @@
+command=cd /home/seeed/hailo-vs-rk182x && /home/seeed/venvs/hailort-test/bin/python python/run_hailo_video_inference.py --hef yolo26n_hailo8_official.hef --video videos/derived/test_640.mp4 --out-dir out/final/hailo8 --model-family yolo26 --benchmark-fps 52.53 --benchmark-latency-ms 13.89
+exit_code=0
+video: test_640.mp4 640x640 source_fps=30.00 frames=394
+HEF: yolo26n_hailo8_official.hef sha256=743de04972fbdba05140d18b9176e38620011134e9f79c7a7dd63b1d13eb90ae
+input vstream: yolo26n/input_layer1 FormatType.UINT8
+warm-up pipeline: 42.18 ms -> banner FPS 23.7
+frames: 394, wall: 26.56 s
+infer only per frame: {"mean_ms": 28.033, "median_ms": 27.647, "min_ms": 22.306, "max_ms": 36.293, "p95_ms": 33.51} -> 35.67 FPS
+pipeline per frame: {"mean_ms": 37.645, "median_ms": 37.057, "min_ms": 29.677, "max_ms": 51.391, "p95_ms": 46.686} -> 26.56 FPS
+end to end: 14.83 FPS over 394 frames (26.56 s total wall)
+class counts: {'car': 3369, 'bus': 228, 'truck': 171, 'traffic light': 9, 'person': 2}
+annotated video: out/final/hailo8/hailo8_yolo11n_result.mp4
+json report: out/final/hailo8/hailo8_yolo11n_video_result.json

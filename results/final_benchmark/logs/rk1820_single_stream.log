@@ -1,0 +1,29 @@
+command=cd /home/seeed/hailo-vs-rk182x && /home/seeed/rk1820_yolo/rknn3_env/bin/python python/run_rk1820_video_inference.py --model yolo26n_rk1820_int8.rknn --weight yolo26n_rk1820_int8.weight --video videos/derived/test_640.mp4 --out-dir out/final/rk1820 --core-mask 0xff --model-family yolo26
+exit_code=0
+core_mask 0xff was rejected by the runtime (it must match the model's compile-time core_num); running with 0x1 = 1 core(s) instead
+video: test_640.mp4 640x640 source_fps=30.00 frames=394
+model: yolo26n_rk1820_int8.rknn sha256=77eedf56ad8647fb9cd033b665f9efc9e34c0a5dfe390bc9c526df1ee8cff301
+weight: yolo26n_rk1820_int8.weight sha256=4bb04ca1800a823f70053b9991658ab47b2f9ad8b97b432d3b792e0a9604789f
+core_mask requested: 0xff, active: 0x1
+runtime sdk version:
+==============================================
+RKNN3 VERSION:
+  API: librknn3_api version: 1.0.4 (1747fb0 build@2026-05-26T10:46:54)(rkcp)
+  DRV: rknn3server: 1.0.4 (8ab764c@2026-05-13T15:11:39)
+rknn3rt_srv: 1.0.4 (833db41@2026-05-13T15:09:18)
+
+==============================================
+
+warm-up pipeline: 60.19 ms -> banner FPS 16.6
+frames: 394, wall: 30.05 s
+infer only per frame: {"mean_ms": 43.889, "median_ms": 43.019, "min_ms": 31.888, "max_ms": 50.68, "p95_ms": 48.099} -> 22.78 FPS
+pipeline per frame: {"mean_ms": 57.304, "median_ms": 57.046, "min_ms": 41.555, "max_ms": 63.267, "p95_ms": 61.228} -> 17.45 FPS
+end to end: 13.11 FPS over 394 frames (30.05 s total wall)
+class counts: {'car': 3958, 'bus': 167, 'truck': 47, 'traffic light': 16}
+annotated video: out/final/rk1820/rk1820_yolo11n_result.mp4
+json report: out/final/rk1820/rk1820_yolo26n_video_result.json
+
+W rknn3-toolkit-lite version: 1.0.5b2
+E RKNNAPI(21845): rknn3_model_init,  core_mask ff is not match with npu core number 1!E RKNN3 model init failed. error code: RKNN3_ERR_ARGUMENT_INVALID
+W ----------------Warning(1)----------------
+E Catch exception when set npu core mode.

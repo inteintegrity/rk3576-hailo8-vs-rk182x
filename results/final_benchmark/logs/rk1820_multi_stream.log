@@ -1,0 +1,22 @@
+command=cd /home/seeed/hailo-vs-rk182x && /home/seeed/rk1820_yolo/rknn3_env/bin/python python/run_video_streams_benchmark.py --backend rk1820 --model yolo26n_rk1820_int8.rknn --weight yolo26n_rk1820_int8.weight --video videos/derived/test_640.mp4 --instances 1,2,4,8 --frames 300 --json out/final/rk1820_streams.json
+exit_code=0
+instances=1: aggregate 16.18 FPS, per stream [16.18] FPS, 300 frames in 18.54 s
+instances=2: aggregate 34.42 FPS, per stream [17.35, 17.21] FPS, 600 frames in 17.43 s
+instances=4: aggregate 57.04 FPS, per stream [14.41, 14.32, 14.26, 14.26] FPS, 1200 frames in 21.04 s
+instances=8: aggregate 88.58 FPS, per stream [11.28, 11.19, 11.19, 11.16, 11.1, 11.11, 11.08, 11.08] FPS, 2400 frames in 27.09 s
+wrote out/final/rk1820_streams.json
+W rknn3-toolkit-lite version: 1.0.5b2
+W rknn3-toolkit-lite version: 1.0.5b2
+W rknn3-toolkit-lite version: 1.0.5b2
+W rknn3-toolkit-lite version: 1.0.5b2
+W rknn3-toolkit-lite version: 1.0.5b2
+W rknn3-toolkit-lite version: 1.0.5b2
+W rknn3-toolkit-lite version: 1.0.5b2
+W rknn3-toolkit-lite version: 1.0.5b2
+W rknn3-toolkit-lite version: 1.0.5b2
+W rknn3-toolkit-lite version: 1.0.5b2
+W rknn3-toolkit-lite version: 1.0.5b2
+W rknn3-toolkit-lite version: 1.0.5b2
+W rknn3-toolkit-lite version: 1.0.5b2
+W rknn3-toolkit-lite version: 1.0.5b2
+W rknn3-toolkit-lite version: 1.0.5b2

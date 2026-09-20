@@ -1,0 +1,30 @@
+{
+  "source": "test.mp4",
+  "derived": {
+    "640": {
+      "file": "test_640.mp4",
+      "resolution": [
+        640,
+        640
+      ],
+      "frames": 394,
+      "bytes": 14458694,
+      "decode_ms": 2.09,
+      "decode_fps_ceiling": 478.31,
+      "derive_seconds": 20.5
+    },
+    "1080": {
+      "file": "test_1080.mp4",
+      "resolution": [
+        1920,
+        1080
+      ],
+      "frames": 394,
+      "bytes": 56653758,
+      "decode_ms": 9.11,
+      "decode_fps_ceiling": 109.78,
+      "derive_seconds": 44.5
+    }
+  },
+  "source_decode_ms": 60.7
+}

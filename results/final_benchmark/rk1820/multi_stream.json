@@ -1,0 +1,86 @@
+{
+  "backend": "rk1820",
+  "video": "test_640.mp4",
+  "frames_per_stream": 300,
+  "model_family": "yolo26",
+  "results": {
+    "1": {
+      "instances": 1,
+      "frames_total": 300,
+      "window_seconds": 18.538,
+      "aggregate_fps": 16.18,
+      "per_stream_fps": [
+        16.18
+      ],
+      "per_stream_mean_infer_ms": [
+        46.56
+      ],
+      "detections_total": 3151,
+      "errors": []
+    },
+    "2": {
+      "instances": 2,
+      "frames_total": 600,
+      "window_seconds": 17.432,
+      "aggregate_fps": 34.42,
+      "per_stream_fps": [
+        17.35,
+        17.21
+      ],
+      "per_stream_mean_infer_ms": [
+        42.82,
+        43.32
+      ],
+      "detections_total": 6334,
+      "errors": []
+    },
+    "4": {
+      "instances": 4,
+      "frames_total": 1200,
+      "window_seconds": 21.038,
+      "aggregate_fps": 57.04,
+      "per_stream_fps": [
+        14.41,
+        14.32,
+        14.26,
+        14.26
+      ],
+      "per_stream_mean_infer_ms": [
+        51.13,
+        51.77,
+        51.4,
+        51.1
+      ],
+      "detections_total": 12771,
+      "errors": []
+    },
+    "8": {
+      "instances": 8,
+      "frames_total": 2400,
+      "window_seconds": 27.095,
+      "aggregate_fps": 88.58,
+      "per_stream_fps": [
+        11.28,
+        11.19,
+        11.19,
+        11.16,
+        11.1,
+        11.11,
+        11.08,
+        11.08
+      ],
+      "per_stream_mean_infer_ms": [
+        65.01,
+        65.46,
+        65.41,
+        65.4,
+        66.15,
+        65.94,
+        66.42,
+        66.19
+      ],
+      "detections_total": 25517,
+      "errors": []
+    }
+  }
+}

@@ -1,0 +1,15 @@
+command=cd /home/seeed/hailo-vs-rk182x && /home/seeed/venvs/hailort-test/bin/python python/run_camera_inference.py --hef yolo26n_hailo8_official.hef --model-family yolo26 --device /dev/video0 --width 640 --height 480 --camera-fps 30 --exposure-ms 10 --gain 48 --seconds 12 --out-dir out/camera_test --record out/camera_test/live.mp4 --snapshot-every 4 --print-interval 3 2>&1 | tail -16
+exit_code=0
+camera: /dev/video0 640x480 requested 30 FPS MJPG, exposure pin=10.0 ms gain=48
+HEF: yolo26n_hailo8_official.hef sha256=743de04972fbdba05140d18b9176e38620011134e9f79c7a7dd63b1d13eb90ae
+input vstream: yolo26n/input_layer1 FormatType.UINT8
+t=   3.0s   21.3 FPS (30-frame) /  21.4 (5s) /  14.7 avg  |  camera delivered  16.3 FPS  |  infer  24.7 ms  pipeline  53.6 ms  dets 1
+t=   6.0s   21.9 FPS (30-frame) /  20.9 (5s) /  14.9 avg  |  camera delivered  15.8 FPS  |  infer  27.0 ms  pipeline  56.4 ms  dets 1
+t=   9.0s   21.7 FPS (30-frame) /  20.6 (5s) /  15.0 avg  |  camera delivered  15.6 FPS  |  infer  28.4 ms  pipeline  54.3 ms  dets 1
+snapshot: out/camera_test/snapshot_00004.0s.jpg
+snapshot: out/camera_test/snapshot_00008.0s.jpg
+snapshot: out/camera_test/snapshot_00012.0s.jpg
+frames: 181, wall: 12.05 s, average 15.017 FPS
+infer only: {"mean_ms": 27.855, "median_ms": 27.861, "min_ms": 20.719, "max_ms": 36.97, "p95_ms": 34.541}
+pipeline (capture wait + letterbox + infer + decode + draw): {"mean_ms": 48.235, "median_ms": 48.953, "min_ms": 25.522, "max_ms": 66.841, "p95_ms": 62.189}
+json report: out/camera_test/camera_live_result.json

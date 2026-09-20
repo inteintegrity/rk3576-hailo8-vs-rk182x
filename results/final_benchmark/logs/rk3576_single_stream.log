@@ -1,0 +1,29 @@
+command=cd /home/seeed/hailo-vs-rk182x && /home/seeed/rockchip-yolo11-quant-benchmark/.venv/bin/python python/run_rk3576_video_inference.py --model yolo26n_rk3576_int8.rknn --video videos/derived/test_640.mp4 --out-dir out/final/rk3576_npu --core-mask 7 --model-family yolo26
+exit_code=0
+video: test_640.mp4 640x640 source_fps=30.00 frames=394
+model: yolo26n_rk3576_int8.rknn sha256=8750d6e73d2e98fa34b8f4d310180d2975f36110be2529225b960e26e7287c9e
+core_mask: 0x7
+runtime sdk version:
+==============================================
+RKNN VERSION:
+  API: 2.3.0 (c949ad889d@2024-11-07T11:35:33)
+  DRV: 0.9.8
+==============================================
+
+warm-up pipeline: 40.21 ms -> banner FPS 24.9
+frames: 394, wall: 25.21 s
+infer only per frame: {"mean_ms": 28.668, "median_ms": 28.681, "min_ms": 23.306, "max_ms": 35.568, "p95_ms": 31.776} -> 34.88 FPS
+pipeline per frame: {"mean_ms": 40.708, "median_ms": 40.705, "min_ms": 35.534, "max_ms": 45.476, "p95_ms": 43.431} -> 24.57 FPS
+end to end: 15.63 FPS over 394 frames (25.21 s total wall)
+class counts: {'car': 4849, 'bus': 157, 'truck': 40, 'traffic light': 23}
+annotated video: out/final/rk3576_npu/rk3576_npu_yolo11n_result.mp4
+json report: out/final/rk3576_npu/rk3576_npu_yolo26n_video_result.json
+I RKNN: [10:40:58.690] RKNN Runtime Information, librknnrt version: 2.3.0 (c949ad889d@2024-11-07T11:35:33)
+I RKNN: [10:40:58.690] RKNN Driver Information, version: 0.9.8
+I RKNN: [10:40:58.691] RKNN Model Information, version: 6, toolkit version: 2.3.2(compiler version: 2.3.2 (@2025-04-03T08:26:16)), target: RKNPU f2, target platform: rk3576, framework name: ONNX, framework layout: NCHW, model inference type: static_shape
+W RKNN: [10:40:58.733] query RKNN_QUERY_INPUT_DYNAMIC_RANGE error, rknn model is static shape type, please export rknn with dynamic_shapes
+/home/seeed/rockchip-yolo11-quant-benchmark/.venv/lib/python3.11/site-packages/rknnlite/api/rknn_lite.py:41: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  import pkg_resources
+W rknn-toolkit-lite2 version: 2.3.2
+W The RK3576 platform has only two NPU cores. "NPU_CORE_0_1_2" is not supported and will be automatically replaced with "NPU_CORE_0_1".
+W Query dynamic range failed. Ret code: RKNN_ERR_MODEL_INVALID. (If it is a static shape RKNN model, please ignore the above warning message.)

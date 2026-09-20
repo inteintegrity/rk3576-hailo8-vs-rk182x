@@ -1,0 +1,10 @@
+command=cd /home/seeed/hailo-vs-rk182x/python && for HEF in yolo26n_hailo8_official.hef yolo11n_hailo8_int8.hef; do echo "=== $HEF ==="; /home/seeed/venvs/hailort-test/bin/python run_hailo.py --hef /home/seeed/hailo-vs-rk182x/$HEF --seconds 10 --out-dir /tmp/live_final4 --serve-port 8086 2>&1 | tail -3; done
+exit_code=0
+=== yolo26n_hailo8_official.hef ===
+[live]  26.6 FPS (30-frame) /  28.0 avg | wait-for-frame   0.8 ms, infer  25.6 ms, whole loop  35.0 ms | 1 detections | slow frames so far 0
+[done] 243 frames in 10.5 s: 27.574 FPS measured (boxes drawn), 23.089 FPS wall clock, 0.342 detections/frame
+[done] json report: /tmp/live_final4/run_hailo_live_result.json
+=== yolo11n_hailo8_int8.hef ===
+[live]  28.7 FPS (30-frame) /  28.1 avg | wait-for-frame   0.8 ms, infer  21.9 ms, whole loop  35.0 ms | 1 detections | slow frames so far 0
+[done] 246 frames in 10.6 s: 28.082 FPS measured (boxes drawn), 23.202 FPS wall clock, 0.711 detections/frame
+[done] json report: /tmp/live_final4/run_hailo_live_result.json
