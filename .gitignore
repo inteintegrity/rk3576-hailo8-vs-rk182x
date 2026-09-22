@@ -8,7 +8,7 @@ video/
 *.mp4
 
 # models and toolchain outputs (export with common/export_canonical_onnx.py and the toolchains)
-model/
+model/*
 *.onnx
 *.hef
 *.har
@@ -75,3 +75,15 @@ zoo_tmp.txt
 common/calibration_manifest.generated.json
 common/make_comparison_figure.py
 results/final_benchmark/_syncmethod/single_vs_multi_stream.png
+
+# large local-only exports
+*.gif
+
+# the three published model folders, in their delivery layout
+!model/Hailo/
+!model/rk1820/
+!model/rk3576/
+!model/Hailo/*.hef
+!model/rk1820/*.rknn
+!model/rk1820/*.weight
+!model/rk3576/*.rknn
