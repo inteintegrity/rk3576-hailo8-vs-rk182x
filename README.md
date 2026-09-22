@@ -5,9 +5,9 @@ RK3576 board (reComputer RK3576 devkit), measured single-stream and with many st
 
 | Accelerator | Runtime | Single stream (pipeline) | 8-stream aggregate |
 |---|---|---:|---:|
-| **Hailo-8** (M.2) | HailoRT 4.23, official async pipeline | **49.2 FPS** | 51.6 FPS (flat: the device's own ceiling) |
-| **RK182x** (M.2) | RKNN3 1.0.4 | 17.5 FPS | **88.6 FPS** (scales with cores) |
-| **RK3576 built-in NPU** | rknn-toolkit-lite2 2.3.2 | 23.5 FPS | 49.4 FPS (capped at its 3 cores) |
+| **Hailo-8** (M.2) | HailoRT 4.23, official async pipeline | **49.2 FPS** | 51.6 FPS |
+| **RK182x** (M.2) | RKNN3 1.0.4 | 17.5 FPS | **88.6 FPS**  |
+| **RK3576 built-in NPU** | rknn-toolkit-lite2 2.3.2 | 23.5 FPS | 49.4 FPS |
 
 **Short version:** for a single stream Hailo-8 wins (device service 51.2 FPS, 13.9 ms per
 inference, and it keeps the work off the SoC's NPU); for multi-camera / 4+ concurrent streams
