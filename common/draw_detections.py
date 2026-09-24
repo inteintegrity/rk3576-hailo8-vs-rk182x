@@ -1,8 +1,8 @@
-"""Shared annotation and timing helpers for the Hailo-8 and RK1820 runners.
+"""Shared annotation and timing helpers for the three accelerator runners.
 
-Keeping the drawing code in one place guarantees the two result images are visually
-identical, so a difference in the picture is a difference in detections rather than
-a difference in how the two runners render them.
+Keeping the drawing code in one place guarantees the three result videos and screenshots
+are visually identical, so a difference in the picture is a difference in detections
+rather than a difference in how the runners render them.
 """
 
 from __future__ import annotations

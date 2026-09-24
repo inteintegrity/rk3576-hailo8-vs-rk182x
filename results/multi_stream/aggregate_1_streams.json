@@ -1,0 +1,19 @@
+{
+  "backend": "hailo8",
+  "hef": "yolo26n_hailo8_official.hef",
+  "video": "test_640.mp4",
+  "streams": 1,
+  "frames_per_stream_target": 200,
+  "depth": 8,
+  "no_decode": false,
+  "frames_processed": 200,
+  "wall_seconds": 3.973,
+  "aggregate_fps": 50.338,
+  "per_stream_fps": 50.34,
+  "per_stream_frames": [
+    200
+  ],
+  "per_stream_detections": [
+    1884
+  ]
+}

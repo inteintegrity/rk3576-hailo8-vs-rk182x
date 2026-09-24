@@ -1,10 +1,0 @@
-command=cd /home/seeed/hailo-vs-rk182x && hailortcli benchmark yolo26n_hailo8_official.hef 2>&1 | tail -8
-exit_code=0
-[F[2KNetwork yolo26n/yolo26n: 100% | 618 | HW Latency: 13.88 ms | ETA: 00:00:00
-
-=======
-Summary
-=======
-FPS     (hw_only)                 = 52.6912
-        (streaming)               = 52.5352
-Latency (hw)                      = 13.8834 ms

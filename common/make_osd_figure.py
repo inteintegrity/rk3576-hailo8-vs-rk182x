@@ -1,12 +1,13 @@
-"""Stitch the three on-screen frames into one image: nothing but the three frames.
+"""Stitch the three device frames into one image: nothing but the three frames.
 
-Each PNG comes from frame 200 of one annotated clip and has already been checked against its
-expected strip by common/check_osd_strip.py. The frames are pasted side by side with no scaling,
-no labels and no titles - the labels and the explanation belong in the article text.
+Each PNG is frame 200 of one annotated clip and has already been checked against its expected
+on-screen text by common/check_osd_figure.py (which also verifies that the copies under
+results/figures/ are these same files). The frames are pasted side by side with no scaling, no
+labels and no titles - the labels and the explanation belong in the article text.
 
     python common/make_osd_figure.py
 
-Output: results/final_benchmark/figures/runtime_osd.png
+Output: results/figures/runtime_osd.png
 """
 
 from __future__ import annotations
@@ -17,14 +18,14 @@ import cv2
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
-BENCH = ROOT / "results" / "final_benchmark"
-OUT = BENCH / "figures" / "runtime_osd.png"
+SINGLE = ROOT / "results" / "single_stream"
+OUT = ROOT / "results" / "figures" / "runtime_osd.png"
 
-# each device keeps its own frame-200 screenshot next to its results
+# the order the article reads them in: Hailo-8, RK3576 NPU, RK182x
 FRAMES = [
-    BENCH / "hailo8" / "frame200.png",
-    BENCH / "rk3576_npu" / "frame200.png",
-    BENCH / "rk1820" / "frame200.png",
+    SINGLE / "hailo8" / "frame200.png",
+    SINGLE / "rk3576_npu" / "frame200.png",
+    SINGLE / "rk1820" / "frame200.png",
 ]
 
 

@@ -1,2 +1,0 @@
-command=cd /home/seeed/hailo-vs-rk182x/python && /home/seeed/venvs/hailort-test/bin/python validate_hailo_async.py --hef /home/seeed/hailo-vs-rk182x/yolo26n_hailo8_official.hef --video /home/seeed/hailo-vs-rk182x/videos/derived/test_640.mp4 --reference /home/seeed/hailo-vs-rk182x/out/final/hailo8/hailo8_yolo26n_video_result.json --seconds 5
-exit_code=-1

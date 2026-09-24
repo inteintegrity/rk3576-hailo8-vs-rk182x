@@ -1,100 +1,168 @@
 # RK3576 accelerators head to head: built-in NPU vs Hailo-8 vs RK182x
 
-The same **YOLO26n** (COCO 80 classes, 640x640, INT8) driven on all three accelerators of one
-RK3576 board (reComputer RK3576 devkit), measured single-stream and with many streams at once:
+One board (reComputer RK3576 devkit), one model (**YOLO26n**, COCO 80 classes, 640x640, INT8),
+three accelerators. Everything under `results/` was produced with the code in this folder.
 
-| Accelerator | Runtime | Single stream (pipeline) | 8-stream aggregate |
-|---|---|---:|---:|
-| **Hailo-8** (M.2) | HailoRT 4.23, official async pipeline | **49.2 FPS** | 51.6 FPS |
-| **RK182x** (M.2) | RKNN3 1.0.4 | 17.5 FPS | **88.6 FPS**  |
-| **RK3576 built-in NPU** | rknn-toolkit-lite2 2.3.2 | 23.5 FPS | 49.4 FPS |
+| Accelerator | Interface | Runtime | 1 stream: inference / full pipeline | 8 streams: aggregate |
+|---|---|---|---:|---:|
+| **Hailo-8** (M.2) | PCIe Gen2 x1 | HailoRT 4.23 `InferModel` pipeline | **51.2 / 49.2 FPS** | 51.6 FPS |
+| **RK3576 built-in NPU** | on-die, 2 NPU cores | rknn-toolkit-lite2 (librknnrt 2.3.0) | 32.9 / 23.5 FPS | 69.7 FPS |
+| **RK182x** (M.2) | PCIe, RKNN3 NTB | RKNN3 runtime 1.0.4 (`rknn3lite`) | 22.8 / 17.5 FPS | **88.6 FPS** |
 
-**Short version:** for a single stream Hailo-8 wins (device service 51.2 FPS, 13.9 ms per
-inference, and it keeps the work off the SoC's NPU); for multi-camera / 4+ concurrent streams
-RK182x wins (88.6 FPS at 8 streams, 1.7x Hailo-8); the built-in NPU is free but loses on both.
-Full data, figures and write-ups (Chinese and English) are under
-[`results/final_benchmark/`](results/final_benchmark/SUMMARY.md) —
-[SUMMARY.md](results/final_benchmark/SUMMARY.md),
-[ARTICLE_en.md](results/final_benchmark/ARTICLE_en.md),
-[ARTICLE_zh.md](results/final_benchmark/ARTICLE_zh.md).
+**Short version.** On a single stream Hailo-8 wins: 51.2 FPS on the device, 49.2 FPS through the
+whole host pipeline, one inference in 13.9 ms, and none of the SoC's NPU is used. With many
+streams RK182x wins on total throughput (88.6 FPS at 8 streams, 1.27x the built-in NPU), while
+the built-in NPU is the cheapest option and overtakes Hailo-8 above two streams. Hailo-8's
+aggregate is flat (50-52 FPS at any stream count) because one module is one device: it serves
+every stream at its full rate rather than adding capacity. Full write-ups:
+[`docs/REPORT.md`](docs/REPORT.md) (Chinese, all tables),
+[`docs/ARTICLE_zh.md`](docs/ARTICLE_zh.md), [`docs/ARTICLE_en.md`](docs/ARTICLE_en.md).
 
-## Why these numbers are comparable
-
-- **One source model, one graph boundary.** All three graphs stop at the **same six raw
-  detection heads** (YOLO26 emits 4-channel direct boxes plus 80-channel score logits, with no
-  DFL and no NMS inside the accelerator). Decode and NMS run in **one shared host
-  implementation** (`common/postprocess_yolo26.py`) and the letterboxed input is byte-identical.
-- **Official artefacts per platform.** Hailo-8 runs Hailo's prebuilt HEF, RK182x uses Rockchip's
-  official quantization recipe (w8a8 with w16a16 score-branch subgraphs), and the RK3576 model was
-  converted by this project with the same graph boundary.
-- **Hailo-8 goes through Hailo's recommended asynchronous pipeline**
-  (`create_infer_model()` -> `configure()` -> `run_async()` with 4-8 inferences in flight, see
-  `common/hailo_async.py`). That is what `hailortcli run` does internally and what Hailo's docs
-  prescribe for peak throughput. With the older synchronous `InferVStreams.infer()` the same board
-  and HEF measured only 33-35 FPS because the device idled while the host decoded; with the async
-  pipeline it reaches 51.2 FPS against the 52.5 FPS Hailo's own CLI reports.
-- **Layered accounting.** Inference only / + letterbox, decode, NMS / + drawing and MP4 writing
-  are measured and reported separately, so host-side cost is never presented as accelerator speed.
-
-## Repository layout
+## What is in this folder
 
 ```
-common/          Shared code: host-side decode (postprocess_yolo11/26), drawing, the HailoRT
-                 async pipeline, RKNN helpers, figure and snapshot generators, pixel-level OSD
-                 verification, and a board SSH helper (remote_ops.py)
-Hailo/Hailo8/    Hailo-8 runners: single image, video, live camera, N-stream aggregate,
-                 plus the async-pipeline validation and live-loop breakdown tools
-rk182x/rk1820/   RK182x (RKNN3) runners and the official YOLO26 conversion recipe
-rk3576/          Built-in NPU (RKNN2) runners, YOLO26 conversion, calibration set, stream derivation
-results/
-  final_benchmark/   Deliverables: SUMMARY.md, both articles, single-stream and aggregate JSON,
-                     figures (the two charts, the three-up mosaic and the three frame-200
-                     screenshots as <device>_frame200.png), and per device the same screenshot
-                     next to its own results with its pixel-level strip check
-                     (<device>/frame200.png, <device>/frame200_strip_check.json)
-  final_benchmark/_syncmethod/   The older synchronous-API numbers, kept for comparison
+Hailo/Hailo8/run_video_inference.py        Hailo-8, one stream, annotated MP4 + JSON record
+Hailo/Hailo8/run_streams_aggregate.py      Hailo-8, N streams into one device, aggregate FPS
+rk3576/run_video_inference.py              built-in NPU, one stream
+rk182x/rk1820/run_video_inference.py       RK182x, one stream
+common/run_video_streams_benchmark.py      built-in NPU / RK182x, 1..8 streams, aggregate FPS
+common/postprocess_common.py               letterbox, sigmoid, box mapping, NMS (shared)
+common/postprocess_yolo26.py               YOLO26 head decode (shared)
+common/draw_detections.py                  annotation and timing summaries (shared)
+common/hailo_pipeline.py                   HailoRT InferModel pipeline (N inferences in flight)
+common/rknn_helpers.py                     RKNN head collection, dequantization, core masks
+common/artifacts.py                        sha256 of the files a run used
+common/check_environment.py                reports which backend runtime is installed here
+common/make_final_figures.py               the two chart PNGs, generated from the JSON records
+common/make_osd_figure.py                  the three-up screenshot mosaic
+common/check_osd_figure.py                 pixel-level verification of those screenshots
+video/test.mp4                            the clip every record was measured on (394 frames)
+model/Hailo/yolo26n_hailo8_official.hef    Hailo's prebuilt HEF (8.35 MiB)
+model/rk3576/yolo26n_rk3576_int8.rknn      RKNN2 w8a8 (7.34 MiB)
+model/rk1820/yolo26n_rk1820_int8.rknn      RKNN3 w8a8 + score branch w16a16 (216 KiB)
+model/rk1820/yolo26n_rk1820_int8.weight    RKNN3 companion weight file (3.37 MiB)
+results/single_stream/<device>/            one run per device: JSON record + frame-200 screenshot
+results/single_stream/frame200_check.json  pixel-level verification of those three screenshots
+results/multi_stream/                      aggregate-throughput records, 1/2/4/8 streams
+results/figures/                           the two charts, the screenshot mosaic, three stills
+results/clips/                             the two published comparison videos (1 stream, 8 streams);
+                                           hosted on the SenseCraft CDN and not tracked in git
+results/README.md                          file-by-file inventory, including what each still shows
+docs/REPORT.md                             the full report with every table (Chinese)
+docs/ARTICLE_zh.md  docs/ARTICLE_en.md      the two published write-ups
+docs/ENVIRONMENT.md                        runtime versions, per-layer timing definitions
+model/README.md                            model provenance and hashes
 ```
 
-## Reproducing it
+Model provenance, per-file hashes and the exact record edits made for this delivery are listed in
+[`results/README.md`](results/README.md) and [`model/README.md`](model/README.md).
+
+## Run it
+
+The three single-stream runners and the multi-stream benchmark are the four entry points. Install
+or check the backend runtimes first (`docs/ENVIRONMENT.md`, `python common/check_environment.py`),
+then run on the board. **Every runner defaults to the clip that ships with this repository**,
+`video/test.mp4` (the one behind every record in `results/`; the records name it `test_640.mp4`,
+the name it had during the runs), so the `--video` flag can simply be left out. Any other clip
+works too - pass `--video <path>` and it is letterboxed to 640x640 automatically.
 
 ```bash
-# 1) Source model: Ultralytics yolo26n.pt -> canonical ONNX (six raw detection heads)
-python common/export_canonical_onnx.py --weights yolo26n.pt --output model/yolo26n/yolo26n.onnx
+# Hailo-8, one stream (4 inferences in flight)
+python Hailo/Hailo8/run_video_inference.py --hef model/Hailo/yolo26n_hailo8_official.hef \
+    --out-dir out/hailo8 --depth 4
 
-# 2) Calibration set: one shared set of letterboxed 640x640 images for both toolchains
-python common/prepare_calibration.py --manifest <image-list> --output-dir <dir> --run-conversion
+# RK3576 built-in NPU, one stream
+python rk3576/run_video_inference.py --model model/rk3576/yolo26n_rk3576_int8.rknn \
+    --out-dir out/rk3576
 
-# 3) Toolchain artefacts: Hailo (.hef), RKNN3 (.rknn + .weight), RKNN2 (.rknn)
-#    (Hailo Dataflow Compiler / rknn3-toolkit / rknn-toolkit2 required)
+# RK182x, one stream
+python rk182x/rk1820/run_video_inference.py --model model/rk1820/yolo26n_rk1820_int8.rknn \
+    --weight model/rk1820/yolo26n_rk1820_int8.weight \
+    --out-dir out/rk1820
 
-# 4) Board-side runs, e.g. Hailo-8 single stream (async depth 4) and 8-stream aggregate
-python Hailo/Hailo8/run_video_inference.py --hef <yolo26n.hef> --video <clip.mp4> \
-    --out-dir out --model-family yolo26 --async-depth 4
-python Hailo/Hailo8/run_streams_aggregate.py --hef <yolo26n.hef> --video <clip.mp4> \
-    --streams 8 --frames 200 --async-depth 8
+# Hailo-8, 8 streams on the one device (add --no-decode for the device-only rate)
+python Hailo/Hailo8/run_streams_aggregate.py --hef model/Hailo/yolo26n_hailo8_official.hef \
+    --streams 8 --frames 200 --depth 8 --json out/hailo8_8stream.json
 
-# 5) Figures and the pixel-level OSD check (everything is generated from the JSON, never hand-edited)
+# built-in NPU / RK182x, 1/2/4/8 streams, one process and one NPU core per stream
+python common/run_video_streams_benchmark.py --backend rk3576 \
+    --model model/rk3576/yolo26n_rk3576_int8.rknn \
+    --instances 1,2,4,8 --frames 200 --json out/rk3576_multi.json
+python common/run_video_streams_benchmark.py --backend rk1820 \
+    --model model/rk1820/yolo26n_rk1820_int8.rknn \
+    --weight model/rk1820/yolo26n_rk1820_int8.weight \
+    --instances 1,2,4,8 --frames 300 --json out/rk1820_multi.json
+
+# which runtimes are present on this board (exit code 0 = all ready)
+python common/check_environment.py
+
+# figures and the screenshot verification (host side, from the JSON records)
 python common/make_final_figures.py
 python common/make_osd_figure.py
-python common/check_osd_strip.py --clip <annotated.mp4> --record <result.json> \
-    --device "RK3576 + Hailo-8" --device-fps 51.2
+python common/check_osd_figure.py
 ```
 
-Board commands were run over SSH through `common/remote_ops.py`; the password is read from the
-`RK_SSH_PASSWORD` environment variable only (never written to a file, never passed on a command
-line), and the host from `RK_SSH_HOST`.
+Requirements: [`requirements.txt`](requirements.txt) for the host side, [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md)
+for the runtime version behind each record. Each runner writes `video_result.json` (or the `--json`
+file it is given); the three single-stream runners also write an annotated `annotated.mp4`, while
+the two aggregate runners deliberately write no video (drawing and encoding would make the host the
+bottleneck). The JSON carries per-frame detections and the timing of every layer, so a result can be
+re-analysed without re-running the board.
+
+## What makes the numbers comparable
+
+- **One source model, one graph boundary.** All three graphs stop at the **same six raw detection
+  heads** - YOLO26 emits 4-channel direct boxes plus 80-channel score logits, with no DFL and no
+  NMS inside the graph. Decode and NMS run in **one shared host implementation**
+  (`common/postprocess_common.py` + `common/postprocess_yolo26.py`), and all three runs read the
+  same clip through the same letterbox code, so they are handed the same input tensor.
+- **Each platform is driven through the API its vendor documents for throughput.** Hailo-8 uses
+  `create_infer_model()` -> `configure()` -> `run_async()` with 4-8 inferences in flight
+  (`common/hailo_pipeline.py`), which is what `hailortcli run` does internally; its own CLI reports
+  52.53 FPS for the same HEF on this board, and this pipeline reaches 51.2. The two Rockchip parts
+  use their Python bindings one frame per call, and the multi-stream runs use one process and one
+  NPU core per stream.
+- **Official artefacts where the vendor ships them.** Hailo-8 runs Hailo's prebuilt HEF; RK182x
+  runs Rockchip's official quantization recipe (w8a8 with w16a16 score-branch subgraphs).
+- **Layered accounting.** The accelerator call, the host decode/NMS and the drawing/encoding are
+  measured and reported separately, so host-side cost is never presented as accelerator speed. The
+  middle layer is not spelled out identically by the three runners (the Hailo-8 one includes the
+  frame read and letterbox, the Rockchip ones record those in a separate field); `results/README.md`
+  gives both, including the like-for-like figures.
+- **Every run is traceable.** Each record stores the sha256 of the model files and of the clip it
+  used, plus the runtime versions and per-frame detections.
+
+## What is verified in this delivery
+
+- The three model files match the `*_sha256` values stored inside the records, and every runner
+  recomputes and prints those hashes at run time (`model/README.md`).
+- `video/test.mp4` matches `input.video_sha256` in all three records, i.e. the shipped records
+  were produced on the shipped clip (`video/README.md`).
+- The copied records were checked field by field against the source project: no timing, per-frame
+  detection, frame count or hash differs. The description/naming edits that were made are listed in
+  `results/README.md`.
+- All three screenshots were verified pixel by pixel against the text they are supposed to carry,
+  under the OpenCV build that drew each one, and the expected text had to beat every one-character
+  variant of itself (wrong digit, wrong device name). The same record holds the banner rectangle
+  measured on screen and the comparison of each still with frame 200 of its annotated clip:
+  `results/single_stream/frame200_check.json`.
+- Both chart PNGs regenerate from the records with zero differing pixels
+  (`python common/make_final_figures.py`), and `figures/runtime_osd.png` is exactly the three stills
+  side by side (`python common/make_osd_figure.py`).
+- Every headline figure in these documents was recomputed from the JSON records.
 
 ## Known limits
 
 - This board's PCIe link is **Gen2 x1** while the Hailo-8 module supports Gen3 x4, so Hailo's
-  published 155 FPS is unreachable here: its own HEF measures 52.5 FPS and this project's async
-  pipeline 51.2 FPS.
-- There is no hardware decoder in this environment (16.5 FPS ceiling on the 4K source), so the
-  comparison uses a derived 640x640 clip.
-- The two Rockchip parts currently only expose synchronous Python bindings
-  (`rknn3_run_async` is not available in RKNN3 1.0.4 and rknnlite does not surface the
-  rknn_run/rknn_wait pair), so their figures are synchronous-API numbers and not strictly
-  like-for-like with Hailo-8's async pipeline.
+  published 155 FPS is unreachable here: its own HEF measures 52.5 FPS and this pipeline 51.2.
+- There is no hardware decoder in this environment (the 4K source caps out at 16.5 FPS software
+  decode), so the comparison uses a derived 640x640 clip. On a real deployment the RK3576 VPU
+  should be used, and that decode cost is a host-side limit, not an accelerator one.
+- The multi-stream runs deliberately exclude drawing and video encoding: they measure inference
+  service capacity. Drawing plus MP4 writing costs about 15 ms per frame on this host (single
+  stream: 49.2 -> 28.3 FPS), so eight annotated outputs would become host-bound.
+- RK182x needs 4 streams before it beats the built-in NPU (1.09x) and 8 streams to lead by 1.27x;
+  at 1-2 streams the PCIe round trip makes it the slower of the two.
 
 ## License
 

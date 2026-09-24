@@ -1,18 +1,16 @@
-"""Shared host-side decode for YOLO26 raw detection heads.
+"""Shared host-side decode for the YOLO26 raw detection heads.
 
-YOLO26 differs from YOLO11 in one structural way: the box branch emits four direct
-values (left, top, right, bottom distances in grid units) instead of a DFL
-distribution over 4 * reg_max channels, and the exported graph carries the
-one2one (end-to-end) heads. Everything else matches, so this module reuses the
-letterbox, NMS and box-mapping helpers from postprocess_yolo11.py and only replaces
-the head decode. Both accelerators that serve a YOLO26 graph use this one
-implementation, exactly as they share the YOLO11 one.
+YOLO26's box branch emits four direct distances (left, top, right, bottom in grid units)
+instead of a DFL distribution, and the exported graph carries the one2one (end-to-end)
+heads, so no DFL softmax and no in-graph NMS are involved. Everything else matches the
+usual YOLO decode, so the letterbox, sigmoid and NMS helpers come from
+postprocess_common.py; only the head decode lives here.
 
 Head layout per scale (stride 8/16/32), per Rockchip's official YOLO26 example:
     box head    (H, W, 4)   -> distances, no DFL
     score head  (H, W, 80)  -> raw logits, sigmoid applied here
 
-Reference for the decode convention: rknn3-model-zoo examples/yolo26/python/infer.py
+Decode convention (rknn3-model-zoo examples/yolo26/python/infer.py):
     x1 = (-dist_left + col + 0.5) * stride,  y1 = (-dist_top + row + 0.5) * stride
     x2 = ( dist_right + col + 0.5) * stride, y2 = ( dist_bottom + row + 0.5) * stride
 """
@@ -21,10 +19,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from postprocess_yolo11 import STRIDES, nms_class_aware, sigmoid
+from postprocess_common import STRIDES, nms_class_aware, sigmoid
 
 BOX_CHANNELS = 4
-SCORE_CHANNELS = 80
 
 
 def distances_from_box_head(box_head: np.ndarray) -> np.ndarray:
@@ -40,7 +37,14 @@ def decode_detections_yolo26(
     iou_thres: float = 0.45,
     max_detections: int = 300,
 ):
-    """Decode all scales, filter by confidence and run the shared class-aware NMS."""
+    """Decode all scales, filter by confidence and run the shared class-aware NMS.
+
+    Returns (boxes xyxy in letterboxed 640x640 pixels, scores, class_ids).
+
+    Class scores are argmax-ed on the raw logits and only the surviving anchors are
+    decoded, which is numerically identical to decoding every anchor and filtering
+    afterwards, but keeps the host-side decode from dominating the measured latency.
+    """
     if len(box_heads) != len(score_heads) or len(box_heads) != len(strides):
         raise ValueError("box heads, score heads and strides must describe the same scales")
 

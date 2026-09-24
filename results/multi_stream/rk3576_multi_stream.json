@@ -1,0 +1,91 @@
+{
+  "backend": "rk3576",
+  "video": "test_640.mp4",
+  "frames_per_stream": 200,
+  "model_family": "yolo26",
+  "npu_cores": 2,
+  "results": {
+    "1": {
+      "instances": 1,
+      "streams_completed": 1,
+      "frames_total": 200,
+      "window_seconds": 9.433,
+      "aggregate_fps": 21.2,
+      "per_stream_fps": [
+        21.2
+      ],
+      "per_stream_mean_infer_ms": [
+        33.54
+      ],
+      "detections_total": 2387,
+      "errors": []
+    },
+    "2": {
+      "instances": 2,
+      "streams_completed": 2,
+      "frames_total": 400,
+      "window_seconds": 9.25,
+      "aggregate_fps": 43.24,
+      "per_stream_fps": [
+        21.72,
+        21.62
+      ],
+      "per_stream_mean_infer_ms": [
+        31.72,
+        31.75
+      ],
+      "detections_total": 4783,
+      "errors": []
+    },
+    "4": {
+      "instances": 4,
+      "streams_completed": 4,
+      "frames_total": 800,
+      "window_seconds": 15.303,
+      "aggregate_fps": 52.28,
+      "per_stream_fps": [
+        19.64,
+        13.08,
+        13.07,
+        13.07
+      ],
+      "per_stream_mean_infer_ms": [
+        35.03,
+        58.57,
+        58.4,
+        58.67
+      ],
+      "detections_total": 9623,
+      "errors": []
+    },
+    "8": {
+      "instances": 8,
+      "streams_completed": 8,
+      "frames_total": 1600,
+      "window_seconds": 22.972,
+      "aggregate_fps": 69.65,
+      "per_stream_fps": [
+        11.48,
+        11.47,
+        11.45,
+        8.88,
+        8.78,
+        8.76,
+        8.75,
+        8.71
+      ],
+      "per_stream_mean_infer_ms": [
+        65.44,
+        64.09,
+        65.07,
+        86.34,
+        86.95,
+        86.84,
+        86.72,
+        87.66
+      ],
+      "detections_total": 19338,
+      "errors": []
+    }
+  }
+}

@@ -1,13 +1,21 @@
-"""Hailo-8 multi-stream aggregate throughput, on HailoRT's asynchronous pipeline.
+"""Hailo-8 aggregate throughput for N concurrent streams on one device.
 
-N reader threads decode and letterbox N videos in parallel and push frames into one queue; a
-single InferModel on the device serves all of them with `--async-depth` inferences kept in flight,
-so the device keeps working while the host decodes. This is the Hailo way of serving many streams
-(one device, internally pipelined) rather than the Rockchip way (one core per stream), and it is
-what `hailortcli run` does internally.
+N reader threads decode and letterbox N videos in parallel and push frames into one queue;
+a single InferModel on the device serves all of them with `--depth` inferences kept in
+flight, so the device keeps working while the host decodes. This is how Hailo's architecture
+serves many streams - one device, internally pipelined - as opposed to the Rockchip way of
+one stream per NPU core, and it is what `hailortcli run` does internally.
 
-    python run_streams_aggregate.py --hef yolo26n_hailo8_official.hef \
-        --video videos/derived/test_640.mp4 --streams 8 --frames 200 --json out.json
+Reported number: aggregate throughput, i.e. total processed frames per second across all
+streams (the same metric the Rockchip multi-stream benchmark reports).
+
+Usage:
+    python Hailo/Hailo8/run_streams_aggregate.py \
+        --hef model/Hailo/yolo26n_hailo8_official.hef \
+        --video <clip.mp4> --streams 8 --frames 200 --depth 8 --json out.json
+
+    --no-decode reports the device-only rate: frames are still submitted and collected, but
+    the host decode/NMS is skipped, which isolates the device contribution.
 """
 
 from __future__ import annotations
@@ -23,98 +31,116 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-_HERE = Path(__file__).resolve().parent
-for _candidate in (_HERE, _HERE.parents[1] / "common", _HERE.parents[2] / "common"):
-    if (_candidate / "postprocess_yolo11.py").is_file():
-        sys.path.insert(0, str(_candidate))
-        break
-else:
-    raise SystemExit("cannot locate common/postprocess_yolo11.py")
-from hailo_async import AsyncPipeline  # noqa: E402
-from postprocess_yolo11 import decode_detections, letterbox  # noqa: E402
+DECODE_IMPLEMENTATION = "common/postprocess_common.py + common/postprocess_yolo26.py (shared with both RK runners)"
+
+
+def _common_dir(start: Path) -> Path:
+    """Locate common/ by walking up from this script, so the repo runs from any depth."""
+    for candidate in (start, *start.parents):
+        module_dir = candidate / "common"
+        if (module_dir / "postprocess_yolo26.py").is_file():
+            return module_dir
+    raise SystemExit(
+        f"cannot locate common/postprocess_yolo26.py above {start}; run the script from inside "
+        f"the repository (the folder that contains common/, model/ and results/)"
+    )
+
+
+def _repo_root(start: Path) -> Path:
+    """The folder that holds common/, model/ and video/ - found by walking up from this script."""
+    return _common_dir(start).parent
+
+DEFAULT_VIDEO = Path("video") / "test.mp4"
+
+
+def _resolve_video(requested, start: Path) -> Path:
+    """The clip to read: an explicit --video, or the test clip bundled with this repository."""
+    if requested is not None:
+        video = Path(requested)
+        if not video.is_file():
+            raise SystemExit(f"video not found: {video}")
+        return video
+    video = _repo_root(start) / DEFAULT_VIDEO
+    if not video.is_file():
+        raise SystemExit(
+            f"""the bundled test clip is missing: {video}
+pass --video <path> to run on another clip, or clone the repository including video/"""
+        )
+    return video
+
+sys.path.insert(0, str(_common_dir(Path(__file__).resolve().parent)))
+
+from artifacts import sha256  # noqa: E402
+from hailo_pipeline import HailoPipeline, collect_heads  # noqa: E402
+from postprocess_common import letterbox, to_network_input  # noqa: E402
 from postprocess_yolo26 import decode_detections_yolo26  # noqa: E402
 
 
-def split_heads(outputs: dict):
-    """Per-scale box/score heads from one frame's output dict."""
-    strides = {80: 8, 40: 16, 20: 32}
-    by_stride: dict[int, dict[str, np.ndarray]] = {}
-    for name, array in outputs.items():
-        squeezed = np.squeeze(np.asarray(array))
-        if squeezed.ndim != 3:
-            raise RuntimeError(f"{name}: unexpected rank {array.shape}")
-        if squeezed.shape[-1] in (4, 64, 80):
-            height, _, channels = squeezed.shape
-            head = squeezed
-        elif squeezed.shape[0] in (4, 64, 80):
-            channels, height, _ = squeezed.shape
-            head = np.transpose(squeezed, (1, 2, 0))
-        else:
-            raise RuntimeError(f"{name}: cannot identify layout of {array.shape}")
-        branch = "box" if channels in (4, 64) else "cls"
-        by_stride.setdefault(strides[height], {})[branch] = head
-    box_heads = [by_stride[stride]["box"] for stride in sorted(by_stride)]
-    cls_heads = [by_stride[stride]["cls"] for stride in sorted(by_stride)]
-    return box_heads, cls_heads
-
-
-def reader(stream_id: int, video: str, frames: int, inbox: queue.Queue) -> None:
+def reader(stream_id: int, video: str, frames: int, frame_count: int, inbox: queue.Queue) -> None:
     capture = cv2.VideoCapture(video)
     if not capture.isOpened():
         return
     # decorrelate the streams: every reader starts at a different offset
-    capture.set(cv2.CAP_PROP_POS_FRAMES, stream_id * 7 % 394)
+    offset = (stream_id * 7) % max(frame_count, 1)
+    capture.set(cv2.CAP_PROP_POS_FRAMES, offset)
     sent = 0
     while sent < frames:
         ok, frame = capture.read()
         if not ok:
             capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
             continue
-        padded = letterbox(frame, 640)[0]
-        inbox.put((stream_id, np.ascontiguousarray(cv2.cvtColor(padded, cv2.COLOR_BGR2RGB))))
+        inbox.put((stream_id, to_network_input(letterbox(frame, 640)[0])))
         sent += 1
     capture.release()
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Hailo-8 aggregate throughput for N concurrent video streams on one device."
+    )
     parser.add_argument("--hef", type=Path, required=True)
-    parser.add_argument("--video", type=Path, required=True)
+    parser.add_argument("--video", type=Path, default=None,
+                        help="clip to process; default: the test clip bundled with this "
+                             "repository (video/test.mp4)")
     parser.add_argument("--streams", type=int, default=8)
     parser.add_argument("--frames", type=int, default=200, help="frames per stream")
-    parser.add_argument("--async-depth", type=int, default=8,
-                        help="inferences kept in flight on the device")
-    parser.add_argument("--model-family", choices=("yolo11", "yolo26"), default="yolo26")
+    parser.add_argument("--depth", type=int, default=8, help="inferences kept in flight on the device")
+    parser.add_argument("--model-family", choices=("yolo26",), default="yolo26",
+                        help="kept for command-line compatibility; this release serves YOLO26n only")
     parser.add_argument("--conf", type=float, default=0.25)
     parser.add_argument("--iou", type=float, default=0.45)
     parser.add_argument("--no-decode", action="store_true",
                         help="skip the host decode/NMS to isolate the device contribution")
     parser.add_argument("--json", type=Path)
     args = parser.parse_args()
+    args.video = _resolve_video(args.video, Path(__file__).resolve().parent)
 
-    decode = decode_detections_yolo26 if args.model_family == "yolo26" else decode_detections
-    pipeline = AsyncPipeline(args.hef, depth=args.async_depth)
-    print(f"async depth {args.async_depth}, streams {args.streams}, frames/stream {args.frames}")
+    pipeline = HailoPipeline(args.hef, depth=args.depth)
+    print(f"HEF {args.hef.name} sha256={sha256(args.hef)}", flush=True)
+    print(f"{args.depth} inference(s) in flight, streams {args.streams}, frames/stream {args.frames}",
+          flush=True)
 
     per_stream_frames = [0] * args.streams
     per_stream_detections = [0] * args.streams
-    inbox: queue.Queue = queue.Queue(maxsize=args.async_depth * 4)
+    inbox: queue.Queue = queue.Queue(maxsize=args.depth * 4)
     total_frames = args.streams * args.frames
 
+    source_frames = 0
     try:
         # warm-up on the first frame of the clip
         warm_capture = cv2.VideoCapture(str(args.video))
+        source_frames = int(warm_capture.get(cv2.CAP_PROP_FRAME_COUNT))
         ok, warm_frame = warm_capture.read()
         warm_capture.release()
         if ok:
-            padded, _, _, _ = letterbox(warm_frame, 640)
-            warm_input = np.ascontiguousarray(cv2.cvtColor(padded, cv2.COLOR_BGR2RGB))[None]
-            for _ in range(args.async_depth):
+            warm_input = to_network_input(letterbox(warm_frame, 640)[0])
+            for _ in range(args.depth):
                 pipeline.submit(warm_input)
-            for _ in range(args.async_depth):
+            for _ in range(args.depth):
                 pipeline.collect()
 
-        threads = [threading.Thread(target=reader, args=(i, str(args.video), args.frames, inbox),
+        threads = [threading.Thread(target=reader,
+                                    args=(i, str(args.video), args.frames, source_frames, inbox),
                                     daemon=True)
                    for i in range(args.streams)]
         for thread in threads:
@@ -124,14 +150,14 @@ def main() -> None:
         started = time.perf_counter()
         while processed < total_frames:
             # fill the pipeline from the queue, then collect the oldest completion: this keeps
-            # async_depth inferences in flight while the host decodes or waits for the readers
+            # `depth` inferences in flight while the host decodes or waits for the readers
             while pipeline.free_slots() > 0:
                 try:
                     item = inbox.get(timeout=0.01)
                 except queue.Empty:
                     break
                 stream_id, frame = item
-                pipeline.submit(frame[None], meta=stream_id)
+                pipeline.submit(frame, meta=stream_id)
             if pipeline.in_flight_count() == 0:
                 if not any(thread.is_alive() for thread in threads):
                     break
@@ -141,9 +167,10 @@ def main() -> None:
             processed += 1
             per_stream_frames[stream_id] += 1
             if not args.no_decode:
-                box_heads, cls_heads = split_heads(outputs)
-                _, scores, _ = decode(box_heads, cls_heads, conf_thres=args.conf,
-                                      iou_thres=args.iou)
+                box_heads, score_heads = collect_heads(outputs)
+                _, scores, _ = decode_detections_yolo26(
+                    box_heads, score_heads, conf_thres=args.conf, iou_thres=args.iou
+                )
                 per_stream_detections[stream_id] += int(len(scores))
         wall = time.perf_counter() - started
         for thread in threads:
@@ -154,12 +181,18 @@ def main() -> None:
     aggregate = processed / wall if wall else 0.0
     report = {
         "backend": "hailo8",
+        "device": "Hailo-8 (M.2, PCIe Gen2 x1)",
         "hef": args.hef.name,
+        "hef_sha256": sha256(args.hef),
         "video": args.video.name,
+        "video_sha256": sha256(args.video),
         "streams": args.streams,
         "frames_per_stream_target": args.frames,
-        "async_depth": args.async_depth,
-        "no_decode": args.no_decode,
+        "depth": args.depth,
+        "decode": "host decode + NMS" if not args.no_decode else "skipped (--no-decode)",
+        "decode_implementation": DECODE_IMPLEMENTATION,
+        "conf_threshold": args.conf,
+        "iou_threshold": args.iou,
         "frames_processed": processed,
         "wall_seconds": round(wall, 3),
         "aggregate_fps": round(aggregate, 3),
@@ -171,6 +204,7 @@ def main() -> None:
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         args.json.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"wrote {args.json}")
 
 
 if __name__ == "__main__":

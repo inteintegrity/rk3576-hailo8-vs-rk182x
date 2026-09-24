@@ -1,11 +1,11 @@
-"""Generate the two article figures from the benchmark JSONs.
+"""Generate the two result figures from the benchmark JSONs.
 
-Everything here is data-driven: the numbers come from the JSON files written by the
-benchmark runs, so the plots can be regenerated at any time:
+Everything here is data-driven: the numbers come from the JSON files written by the benchmark
+runs, so the plots can be regenerated at any time and can never drift from the records:
 
     python common/make_final_figures.py
 
-Outputs (results/final_benchmark/figures/):
+Outputs (results/figures/):
     multi_stream_scaling.png   aggregate throughput vs number of concurrent streams
     single_stream_bars.png     one stream: inference / pipeline / annotate+encode
 """
@@ -21,14 +21,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
-BENCH = ROOT / "results" / "final_benchmark"
-OUT = BENCH / "figures"
+SINGLE = ROOT / "results" / "single_stream"
+MULTI = ROOT / "results" / "multi_stream"
+OUT = ROOT / "results" / "figures"
 
 COLOURS = {"hailo8": "#7d3c98", "rk3576_npu": "#2e86c1", "rk1820": "#c0392b"}
 LABELS = {
-    "hailo8": "Hailo-8 (one device, batched funnel)",
-    "rk3576_npu": "RK3576 built-in NPU (3 cores, one stream each)",
-    "rk1820": "RK182x (8 cores, one stream each)",
+    "hailo8": "Hailo-8 (one device, all streams through one pipeline)",
+    "rk3576_npu": "RK3576 built-in NPU (2 cores, oversubscribed above 2)",
+    "rk1820": "RK182x (8-core module, one process per stream)",
 }
 NL = chr(10)
 
@@ -38,13 +39,13 @@ def load(path: Path) -> dict:
 
 
 def multi_stream_figure() -> plt.Figure:
-    rk3576 = load(BENCH / "rk3576_npu" / "multi_stream.json")["results"]
-    rk1820 = load(BENCH / "rk1820" / "multi_stream.json")["results"]
-    hailo = {n: load(BENCH / "hailo8" / f"aggregate_{n}_streams.json") for n in (1, 2, 4, 8)}
+    rk3576 = load(MULTI / "rk3576_multi_stream.json")["results"]
+    rk1820 = load(MULTI / "rk1820_multi_stream.json")["results"]
+    hailo = {n: load(MULTI / f"aggregate_{n}_streams.json") for n in (1, 2, 4, 8)}
 
     series = [
         ("rk1820", [1, 2, 4, 8], [rk1820[str(n)]["aggregate_fps"] for n in (1, 2, 4, 8)]),
-        ("rk3576_npu", [1, 2, 3], [rk3576[str(n)]["aggregate_fps"] for n in (1, 2, 3)]),
+        ("rk3576_npu", [1, 2, 4, 8], [rk3576[str(n)]["aggregate_fps"] for n in (1, 2, 4, 8)]),
         ("hailo8", [1, 2, 4, 8], [hailo[n]["aggregate_fps"] for n in (1, 2, 4, 8)]),
     ]
 
@@ -57,7 +58,7 @@ def multi_stream_figure() -> plt.Figure:
                     ha="left", va="center", fontsize=13, fontweight="bold", color=COLOURS[key])
 
     ax.annotate(NL.join(["flat at the device's own ceiling:", "one device serves all streams"]),
-                xy=(4, 51.62), xytext=(2.0, 68), fontsize=11.5, color=COLOURS["hailo8"],
+                xy=(6.2, 51.6), xytext=(5.1, 22), fontsize=11.5, color=COLOURS["hailo8"],
                 ha="left", va="bottom",
                 arrowprops=dict(arrowstyle="->", color=COLOURS["hailo8"], linewidth=2,
                                 connectionstyle="arc3,rad=0.2"))
@@ -71,31 +72,24 @@ def multi_stream_figure() -> plt.Figure:
     ax.grid(axis="y", alpha=0.3)
     ax.legend(loc="upper left", fontsize=11.5, framealpha=0.95)
     fig.text(0.5, 0.04,
-             "Each accelerator driven its own way: Hailo-8 as a batched funnel into one device, "
-             "the Rockchip parts as one stream per NPU core.",
+             "Each accelerator driven its own way: Hailo-8 takes all streams through one device "
+             "pipeline, the Rockchip parts give one stream per NPU core.",
              ha="center", fontsize=11, color="#444444")
     return fig
 
 
 def single_stream_figure() -> plt.Figure:
-    data = {
-        "hailo8": load(BENCH / "hailo8" / "yolo26n_video_result.json")["timing"],
-        "rk3576_npu": load(BENCH / "rk3576_npu" / "yolo26n_video_result.json")["timing"],
-        "rk1820": load(BENCH / "rk1820" / "yolo26n_video_result.json")["timing"],
-    }
     order = ["hailo8", "rk3576_npu", "rk1820"]
+    records = {key: load(SINGLE / key / "video_result.json") for key in order}
     stages = ["inference only", "+ letterbox, decode, NMS", "+ drawing and MP4 output"]
     values = {}
     for key in order:
-        t = data[key]
-        frames = load(BENCH / ("hailo8" if key == "hailo8" else "rk3576_npu" if key == "rk3576_npu"
-                               else "rk1820") / "yolo26n_video_result.json")["detection_summary"]["frames"]
+        timing = records[key]["timing"]
+        frames = records[key]["detection_summary"]["frames"]
         values[key] = [
-            # "inference only" as measured for that device: Hailo-8 reports the async pipeline's
-            # device service rate, the Rockchip runners their synchronous inference-only rate
-            t["python_infer_only_fps"],
-            1000.0 / t["pipeline_without_io"]["mean_ms"],
-            frames / t["total_wall_seconds"],
+            timing["python_infer_only_fps"],
+            1000.0 / timing["pipeline_without_io"]["mean_ms"],
+            frames / timing["total_wall_seconds"],
         ]
 
     fig, ax = plt.subplots(figsize=(11.0, 6.6), dpi=170)
@@ -118,8 +112,7 @@ def single_stream_figure() -> plt.Figure:
     ax.set_xticks(positions)
     ax.set_xticklabels([LABELS[k].split(" (")[0] for k in order], fontsize=12.5)
     ax.set_ylabel("Frames per second", fontsize=13.5)
-    ax.set_title("One stream, 394 frames: Hailo-8 on the official async pipeline leads by 2.2x",
-                 fontsize=15, fontweight="bold")
+    ax.set_title("One stream, 394 frames: Hailo-8 leads by 2.1x", fontsize=15, fontweight="bold")
     ax.set_ylim(0, 62)
     ax.grid(axis="y", alpha=0.3)
     ax.legend(loc="upper right", fontsize=11, framealpha=0.95)
