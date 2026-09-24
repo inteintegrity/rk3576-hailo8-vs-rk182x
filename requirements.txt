@@ -1,6 +1,6 @@
 # Host-side dependencies: used by the figure scripts and by the screenshot/text checks.
-# On the board, do not pip install this by hand: each backend has its own installer, which creates
-# .venvs/<backend> with --system-site-packages and installs the vendor wheel from wheels/ -
+# On the board, do not pip install this by hand: each backend has its own installer, which creates a
+# self-contained .venvs/<backend> and installs everything from vendor/wheels (offline) -
 #   bash scripts/install-rk3576.sh | install-hailo8.sh | install-rk182x.sh
 numpy>=1.24
 opencv-python>=4.6

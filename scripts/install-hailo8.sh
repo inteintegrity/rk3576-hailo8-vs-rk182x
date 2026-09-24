@@ -1,19 +1,25 @@
 #!/usr/bin/env bash
 # Install and verify the Hailo-8 environment.
 #
-#   bash scripts/install-hailo8.sh                              # use the board's existing HailoRT
-#   HAILORT_WHEEL=/path/to/hailort-4.23.0-cp311-cp311-linux_aarch64.whl bash scripts/install-hailo8.sh
+#   bash scripts/install-hailo8.sh
 #
-# This repository deliberately does not ship a HailoRT wheel (the Python bindings come from Hailo's
-# Developer Zone and are not redistributed here), so the default route is "whatever HailoRT 4.23 is
-# already installed on the board". A wheel installs only the Python bindings - the HailoRT library,
-# the PCIe driver and hailortcli must still be installed on the board itself.
+# Everything comes from vendor/ into .venvs/hailo8, offline: NumPy, OpenCV and the HailoRT 4.23
+# Python binding all ship as aarch64 wheels in this repository. The venv is self-contained, so the
+# runner never needs PYTHONPATH or LD_LIBRARY_PATH.
+#
+# The board keeps its own kernel driver and HailoRT libraries: this script installs nothing at the
+# system level, replaces no driver and does not reload modules. It only makes the Python side (the
+# binding) available to the venv. If the Hailo-8 card is not in the M.2 slot the check will say so;
+# everything else still installs.
 set -euo pipefail
 
 PROJECT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 VENV_DIR="${VENV_DIR:-${PROJECT_DIR}/.venvs/hailo8}"
-HAILORT_WHEEL="${HAILORT_WHEEL:-}"
+VENDOR="${PROJECT_DIR}/vendor/wheels"
+NUMPY="numpy-1.26.4-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
+OPENCV="opencv_python_headless-4.11.0.86-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
+HAILORT="hailort-4.23.0-cp311-cp311-linux_aarch64.whl"
 
 fail() { echo "ERROR: $*" >&2; exit 1; }
 
@@ -24,37 +30,33 @@ esac
 
 command -v "${PYTHON_BIN}" >/dev/null 2>&1 || fail "${PYTHON_BIN} was not found; install Python 3.11 first"
 PYTHON_TAG="$("${PYTHON_BIN}" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
-[ "${PYTHON_TAG}" = "3.11" ] || fail "HailoRT 4.23 wheels are CPython 3.11; found ${PYTHON_TAG} (set PYTHON_BIN=/path/to/python3.11)"
+[ "${PYTHON_TAG}" = "3.11" ] || fail "the bundled wheels are CPython 3.11; found ${PYTHON_TAG} (set PYTHON_BIN=/path/to/python3.11)"
 "${PYTHON_BIN}" -c 'import venv' >/dev/null 2>&1 || fail "the venv module is missing; run: sudo apt install -y python3-venv"
 
-echo "verifying the shipped model and sample clip against checksums.sha256"
+for wheel in "${NUMPY}" "${OPENCV}" "${HAILORT}"; do
+    [ -f "${VENDOR}/${wheel}" ] || fail "a bundled wheel is missing: ${VENDOR}/${wheel}"
+done
+
+echo "verifying the shipped models, wheels and sample clip against checksums.sha256"
 "${PYTHON_BIN}" "${PROJECT_DIR}/scripts/verify-checksums.py" --quiet || fail "the shipped files do not match checksums.sha256"
 
 if [ ! -d "${VENV_DIR}" ]; then
     echo "creating ${VENV_DIR}"
-    "${PYTHON_BIN}" -m venv --system-site-packages "${VENV_DIR}"
+    "${PYTHON_BIN}" -m venv "${VENV_DIR}"
+fi
+# the environment must be self-contained: a venv made by an earlier revision inherited the system
+# site-packages, and the runner must not depend on that
+if [ -f "${VENV_DIR}/pyvenv.cfg" ] && grep -qi '^include-system-site-packages *= *true' "${VENV_DIR}/pyvenv.cfg"; then
+    echo "${VENV_DIR} still inherits the system site-packages; recreating it self-contained"
+    rm -rf "${VENV_DIR}"
+    "${PYTHON_BIN}" -m venv "${VENV_DIR}"
 fi
 VENV_PYTHON="${VENV_DIR}/bin/python"
+"${VENV_PYTHON}" -m pip --version >/dev/null 2>&1 || fail "pip is missing inside ${VENV_DIR}; run: sudo apt install -y python3-venv python3-pip"
 
-if [ -n "${HAILORT_WHEEL}" ]; then
-    [ -f "${HAILORT_WHEEL}" ] || fail "HAILORT_WHEEL points at a missing file: ${HAILORT_WHEEL}"
-    echo "installing ${HAILORT_WHEEL##*/} into the venv"
-    "${VENV_PYTHON}" -m pip install --quiet --no-index --no-deps --force-reinstall "${HAILORT_WHEEL}"
-elif "${VENV_PYTHON}" -c 'import hailo_platform' >/dev/null 2>&1; then
-    echo "using the HailoRT already installed on this board"
-else
-    fail "HailoRT is not installed on this board and no wheel was given.
-       Install these three for HailoRT 4.23 on the board (from Hailo's Developer Zone, or copy
-       them from the machine that built this repository):
-         sudo dpkg -i hailort-pcie-driver_4.23.0_all.deb hailort_4.23.0_arm64.deb   # driver + library + hailortcli
-         HAILORT_WHEEL=/path/to/hailort-4.23.0-cp311-cp311-linux_aarch64.whl bash scripts/install-hailo8.sh
-       Then check the card reports itself:  hailortcli fw-control identify"
-fi
-
-if ! "${VENV_PYTHON}" -c 'import numpy, cv2' >/dev/null 2>&1; then
-    echo "note: numpy or OpenCV is not importable from the venv - install them with"
-    echo "      sudo apt install -y python3-numpy python3-opencv"
-fi
+echo "installing NumPy, OpenCV and the HailoRT binding from vendor/"
+"${VENV_PYTHON}" -m pip install --quiet --no-index --no-deps --force-reinstall \
+    "${VENDOR}/${NUMPY}" "${VENDOR}/${OPENCV}" \
 
 echo
 "${VENV_PYTHON}" "${PROJECT_DIR}/scripts/check-hailo8.py"

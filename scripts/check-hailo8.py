@@ -15,7 +15,9 @@ It checks the model and the sample clip against checksums.sha256 and runs one re
 from __future__ import annotations
 
 import argparse
+import glob
 import importlib
+import platform
 import sys
 from pathlib import Path
 
@@ -29,21 +31,32 @@ MODEL = "model/Hailo/yolo26n_hailo8_official.hef"
 
 
 def probe_driver(report: Report) -> bool:
-    """The PCIe card needs its kernel driver; /dev/hailo0 or a loaded module both prove it."""
-    evidence = []
-    if Path("/dev/hailo0").exists():
-        evidence.append("/dev/hailo0")
+    """Separate the three states: driver loaded with a device, driver installed but not loaded
+    (the card is not in the M.2 slot), and no driver at all."""
     modules = run(["lsmod"]) or ""
-    if "hailo_pci" in modules:
-        evidence.append("hailo_pci kernel module")
-    pci = run(["lspci"]) or ""
-    for line in pci.splitlines():
-        if "hailo" in line.lower():
-            evidence.append(line.strip())
-    ok = report.check("Hailo-8 device is present", bool(evidence),
-                      "; ".join(evidence) if evidence else
-                      "no /dev/hailo0, no hailo_pci module and no Hailo PCIe device")
-    return ok
+    loaded = "hailo_pci" in modules
+    node = Path("/dev/hailo0")
+    try:
+        node_there = node.exists()
+    except OSError:
+        node_there = False
+    pci_line = next((line.strip() for line in (run(["lspci"]) or "").splitlines()
+                     if "hailo" in line.lower()), None)
+    kernel = platform.release()
+    module_files = glob.glob(f"/lib/modules/{kernel}/**/hailo_pci.ko*", recursive=True)
+
+    if loaded or node_there:
+        evidence = [item for item in ("/dev/hailo0" if node_there else None,
+                                      "hailo_pci module loaded" if loaded else None, pci_line) if item]
+        return report.check("Hailo-8 driver loaded and device present", True, "; ".join(evidence))
+    if module_files:
+        return report.check("Hailo-8 driver loaded and device present", False,
+                            f"hailo_pci.ko is installed ({module_files[0]}) but not loaded - the "
+                            f"Hailo-8 module is not in the M.2 slot. Everything else can still be used; "
+                            f"insert the card and re-run to reach the one-frame inference.")
+    return report.check("Hailo-8 driver loaded and device present", False,
+                        f"no hailo_pci kernel module under /lib/modules/{kernel} and no /dev/hailo0; "
+                        f"this board has no Hailo-8 driver installed")
 
 
 def probe_tool(report: Report) -> bool:
@@ -69,8 +82,8 @@ def probe_binding(report: Report) -> bool:
         module = importlib.import_module("hailo_platform")
     except ImportError as error:
         return report.check("hailo_platform binding imports", False,
-                            f"{error}; HailoRT is not installed - pass HAILORT_WHEEL=/path/to/"
-                            f"hailort-4.23.0-cp311-cp311-linux_aarch64.whl to the install script")
+                            f"{error}; the binding is installed from vendor/wheels by "
+                            f"install-hailo8.sh - re-run: bash scripts/install-hailo8.sh")
     version = getattr(module, "__version__", "present")
     return report.check("hailo_platform binding imports", True, f"{version} ({module.__file__})")
 
@@ -82,7 +95,8 @@ def probe_dependencies(report: Report) -> bool:
             module = __import__(name)
             report.check(f"{name} imports", True, getattr(module, "__version__", "present"))
         except ImportError as error:
-            ok = report.check(f"{name} imports", False, f"{error}")
+            ok = report.check(f"{name} imports", False,
+                              f"{error}; it comes from vendor/wheels - re-run the install script")
     return ok
 
 

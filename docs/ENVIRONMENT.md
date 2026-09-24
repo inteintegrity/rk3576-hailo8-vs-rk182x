@@ -46,13 +46,20 @@ bash scripts/run-rk3576.sh         # runs the sample clip through that venv
 # the same three scripts for hailo8 and rk182x
 ```
 
-The install scripts need no network: the RKNNLite2 wheel ships in `wheels/`, and the venvs are
-created with `--system-site-packages` so the board's numpy/OpenCV and vendor runtimes are reused.
-Each check verifies aarch64, Python 3.11, the Python binding, the driver and device, the model
-files and the sample clip (against `checksums.sha256`, via `scripts/verify-checksums.py`), and then
-runs **one real inference** on one frame of the sample clip; the exit code is 0 only when that
-succeeds. No check ever falls back to
-the system Python: the run scripts refuse to start if their venv is missing.
+The install scripts need no network: every dependency is an aarch64 wheel in `vendor/wheels/`
+(RKNNLite2, HailoRT, NumPy, OpenCV headless), installed with `pip --no-index` into a
+**self-contained** venv - the venvs do not inherit the system site-packages, so no PYTHONPATH or
+LD_LIBRARY_PATH is ever needed. The RK182x binding has no wheel, so `install-rk182x.sh` packs the
+RKNN3 Python environment that already exists on the board into
+`vendor/rknn3/rknn3lite-cp311-aarch64.tar.gz` and unpacks it into the venv (see `vendor/README.md`).
+Kernel drivers are left exactly as the board has them.
+
+Each check verifies aarch64, Python 3.11, the Python binding, the driver and device, the model files
+and the sample clip (against `checksums.sha256`, via `scripts/verify-checksums.py`), and then runs
+**one real inference** on one frame of the sample clip; the exit code is 0 only when that succeeds.
+No check ever falls back to the system Python: the run scripts refuse to start if their venv is
+missing. Redistribution questions about the Hailo and RKNN3 packages are listed in
+`vendor/README.md` and in the repository README.
 
 ### Hailo-8
 
@@ -62,7 +69,7 @@ the system Python: the run scripts refuse to start if their venv is missing.
 | also needed | Hailo's PCIe kernel driver for the M.2 card, and `hailortcli` for firmware checks |
 | version rule | the HailoRT user-space package (and its Python bindings) must match the installed driver and firmware version exactly |
 | where it comes from | Hailo's Developer Zone: the HailoRT packages and the AI Software Suite; the driver package is the board-specific one for the host's kernel. Hailo's own installation guide is `docs/GETTING_STARTED.rst` in [hailo_model_zoo](https://github.com/hailo-ai/hailo_model_zoo) |
-| install | Hailo does not publish these on PyPI: download the board's HailoRT `.deb` (or the AI Software Suite) and the PCIe driver for your kernel from the Developer Zone, install the driver first, then HailoRT, then confirm the Python bindings import. There is no public mirror, which is why this delivery cannot ship one |
+| install | the Python binding is bundled here as `vendor/wheels/hailort-4.23.0-cp311-cp311-linux_aarch64.whl` and installed by `scripts/install-hailo8.sh`; the driver, `libhailort.so` and `hailortcli` come from Hailo's Developer Zone and are left untouched (already installed on this board) |
 | check | `bash scripts/install-hailo8.sh` (or `.venvs/hailo8/bin/python scripts/check-hailo8.py`) runs `hailortcli --version`, `hailortcli fw-control identify`, the binding import and one real inference |
 | on this board | HailoRT 4.23.0, module at `0000:01:00.0`, PCIe **Gen2 x1** (the module supports Gen3 x4) |
 
@@ -73,8 +80,8 @@ the system Python: the run scripts refuse to start if their venv is missing.
 | runner imports | `rknnlite.api.RKNNLite` from `rknn-toolkit-lite2` |
 | also needed | `librknnrt.so` (the NPU runtime library, `librknnrt` 2.3.0 here) |
 | version rule | the `rknn_toolkit_lite2` wheel must match the board's Python (3.11 here) and the `librknnrt.so` that ships with it; models must be compiled for the same runtime generation |
-| where it comes from | Rockchip's [airockchip/rknn-toolkit2](https://github.com/airockchip/rknn-toolkit2): the board wheel is `rknn-toolkit-lite2/packages/rknn_toolkit_lite2-2.3.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl` (cp37-cp312 for the other Python versions) and the runtime library is `rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so`; the full release is on Rockchip's cloud drive (fetch code `rknn`). Toolkit2 v2.3.2 is current and lists RK3576 and Python 3.6-3.12 |
-| install | `pip install <wheel>` on the board, then put `librknnrt.so` where the loader finds it (`sudo cp librknnrt.so /usr/lib/ && sudo ldconfig`). Wheel and library must come from the same release |
+| where it comes from | bundled here as `vendor/wheels/rknn_toolkit_lite2-2.3.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl`; upstream is Rockchip's [airockchip/rknn-toolkit2](https://github.com/airockchip/rknn-toolkit2) (wheel under `rknn-toolkit-lite2/packages/`, library under `rknpu2/runtime/Linux/librknn_api/aarch64/`), distributed through Rockchip's cloud drive (fetch code `rknn`). The repository ships the wheel so a board needs no download |
+| install | handled by `scripts/install-rk3576.sh`: the wheel is installed from `vendor/` into `.venvs/rk3576`, offline. The board's own `librknnrt.so` is used as it is - this repository never installs or replaces it |
 | check | `bash scripts/install-rk3576.sh` (or `.venvs/rk3576/bin/python scripts/check-rk3576.py`); `ldconfig -p` lists it under `librknnrt.so` |
 | on this board | librknnrt 2.3.0, two NPU cores (`core_mask` `0x3` selects both, `0x1`/`0x2` one each). The 2.3.2 wheel carries its own `librknnrt.so`; install the release whose runtime you want, keeping wheel and library together |
 
@@ -85,8 +92,8 @@ the system Python: the run scripts refuse to start if their venv is missing.
 | runner imports | `rknn3lite.api.rknn3_lite.RKNN3Lite` (the on-board Python interface that wraps the RKNN3 runtime's C API) |
 | also needed | the RKNN3 runtime on the board, and the module seated in the M.2 slot (the runtime reports the device) |
 | version rule | **toolkit and runtime versions must match**: the source project's checklist records that a model compiled with toolkit 1.0.5 failed on this board's 1.0.4 runtime with `RKNN3_ERR_FAIL`, which is why everything here is 1.0.4 |
-| where it comes from | Rockchip's [airockchip/rknn3-toolkit](https://github.com/airockchip/rknn3-toolkit): the board wheel is `rknn3-toolkit-lite/packages/rknn3_toolkit_lite-<version>-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl` (1.1.0 is published, with a `requirements.txt` beside it), the runtime library is in `rknn3-runtime/`, and the SDK with firmware, documentation and pre-converted models is on Rockchip's cloud drive (access code `rknn`). The board vendor's own walkthrough: Seeed's [RK3588/RK182x RKNN3 deployment guide](https://sensecraft.seeed.cc/ai-lab/zh/tools/rk/rk3588-rk182x-rknn3-deploy) |
-| install | `pip install <wheel>` on the board, matching the RKNN3 runtime installed there. **Keep toolkit and runtime on the same version**: this board runs runtime 1.0.4 and a model compiled with the 1.0.5 toolkit failed on it with `RKNN3_ERR_FAIL`. The published SDK has moved to V1.1.0 (its docs list Python 3.10/3.12), while the records here were produced with 1.0.4 on Python 3.11.2 |
+| where it comes from | upstream is Rockchip's [airockchip/rknn3-toolkit](https://github.com/airockchip/rknn3-toolkit) (on-board Python interface in `rknn3-toolkit-lite/`, runtime in `rknn3-runtime/`, SDK on Rockchip's cloud drive with access code `rknn`). This repository ships no RKNN3 wheel; `install-rk182x.sh` turns the environment already present on the board into the portable package instead |
+| install | handled by `scripts/install-rk182x.sh`: it packs the RKNN3 environment already on the board into `vendor/rknn3/rknn3lite-cp311-aarch64.tar.gz` and unpacks it into `.venvs/rk182x` |
 | check | `bash scripts/install-rk182x.sh` (or `.venvs/rk182x/bin/python scripts/check-rk182x.py`); the vendor's `rknn3_model_test` benchmark is the device-level check |
 | on this board | RKNN3 runtime 1.0.4, module at the M.2 slot; the model in `model/rk1820/` is compiled for **one** core, and the runtime refuses a mask that does not match, so the runners request a mask and record the one that was accepted |
 

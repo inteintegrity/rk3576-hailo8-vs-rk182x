@@ -15,7 +15,9 @@ and reachable, because both fail without a device.
 from __future__ import annotations
 
 import argparse
+import glob
 import importlib
+import platform
 import sys
 from pathlib import Path
 
@@ -30,17 +32,32 @@ WEIGHT = "model/rk1820/yolo26n_rk1820_int8.weight"
 
 
 def probe_driver(report: Report) -> bool:
-    """Report what the PCIe side shows; the runtime handshake in one_frame_inference() is decisive."""
-    evidence = []
+    """The RK182x is 1d87:182a and needs pcie-rkep bound to it; the driver creates /dev/pcie-rkep-*.
+
+    The decisive check is still the runtime handshake in one_frame_inference() - this one tells the
+    driver states apart so a failure is easy to read.
+    """
     pci = run(["lspci"]) or ""
-    for line in pci.splitlines():
-        if any(word in line.lower() for word in ("rockchip", "rknn", "ntb")):
-            evidence.append(line.strip())
-    for pattern in ("/dev/rknn*", "/dev/rk182*"):
-        evidence.extend(str(path) for path in Path("/").glob(pattern.lstrip("/")))
-    report.info(f"module evidence: {'; '.join(evidence) if evidence else 'nothing matched in lspci//dev'}")
-    return report.check("RK182x module reports itself", True,
-                        "runtime handshake is checked by the one-frame inference below")
+    card = next((line.strip() for line in pci.splitlines()
+                 if "1d87:182a" in line.lower() or "rk182x" in line.lower()), None)
+    loaded = "pcie_rkep" in (run(["lsmod"]) or "")
+    nodes = sorted(str(path) for path in Path("/dev").glob("pcie-rkep-*"))
+    kernel = platform.release()
+    module_files = glob.glob(f"/lib/modules/{kernel}/**/pcie-rkep.ko*", recursive=True)
+
+    evidence = "; ".join(item for item in (
+        card, "pcie_rkep loaded" if loaded else "pcie_rkep NOT loaded",
+        f"device node {nodes[0]}" if nodes else "no /dev/pcie-rkep-* node") if item)
+    if card and (loaded or nodes):
+        return report.check("RK182x driver bound and device node present", True, evidence)
+    if card or module_files:
+        return report.check("RK182x driver bound and device node present", False,
+                            f"{evidence}. The card is visible but pcie-rkep is not bound: the "
+                            f"kernel's ID table lacks 0x182a, so the driver override has to be "
+                            f"applied (see the notes in model/README.md) and the module must be "
+                            f"seated in the M.2 slot")
+    return report.check("RK182x driver bound and device node present", False,
+                        f"{evidence}. No RK182x card on this board's PCIe bus")
 
 
 def probe_binding(report: Report) -> bool:
@@ -48,8 +65,8 @@ def probe_binding(report: Report) -> bool:
         module = importlib.import_module("rknn3lite.api.rknn3_lite")
     except ImportError as error:
         return report.check("rknn3lite binding imports", False,
-                            f"{error}; the RKNN3 runtime is not installed - install the RK182x SDK, "
-                            f"or pass RKNN3_WHEEL=/path/to/rknn3_toolkit_lite-*.whl to the install script")
+                            f"{error}; the binding is installed from vendor/rknn3 by "
+                            f"install-rk182x.sh - re-run: bash scripts/install-rk182x.sh")
     report.check("rknn3lite binding imports", True, str(module.__file__))
     try:
         version = (module.RKNN3Lite().get_sdk_version() or "").strip().splitlines()
@@ -66,7 +83,8 @@ def probe_dependencies(report: Report) -> bool:
             module = __import__(name)
             report.check(f"{name} imports", True, getattr(module, "__version__", "present"))
         except ImportError as error:
-            ok = report.check(f"{name} imports", False, f"{error}")
+            ok = report.check(f"{name} imports", False,
+                              f"{error}; it comes from vendor/wheels - re-run the install script")
     return ok
 
 

@@ -23,22 +23,23 @@ every stream at its full rate rather than adding capacity. Full write-ups:
 On the board, one triple per backend - install once, then run any clip:
 
 ```bash
-bash scripts/install-rk3576.sh     # RKNNLite2 wheel from wheels/, board numpy/OpenCV reused
+bash scripts/install-rk3576.sh     # everything from vendor/, offline; ends with a one-frame NPU test
 bash scripts/run-rk3576.sh         # the bundled sample clip; pass a path for another clip
 
-bash scripts/install-hailo8.sh     # uses the HailoRT already on the board
+bash scripts/install-hailo8.sh     # HailoRT binding from vendor/, board driver untouched
 bash scripts/run-hailo8.sh
 
-bash scripts/install-rk182x.sh     # uses the RKNN3 runtime already on the board
+bash scripts/install-rk182x.sh     # packs the board's RKNN3 env into vendor/rknn3, installs it
 bash scripts/run-rk182x.sh
 ```
 
-Each install creates `.venvs/<backend>` (a venv with `--system-site-packages`, so nothing is
-downloaded), verifies the shipped files against `checksums.sha256` and then runs the backend's
-check, which ends with **one real inference on one frame of the sample clip**. The run scripts
-always use that venv and refuse to fall back to the system Python. `HAILORT_WHEEL=/path` and
-`RKNN3_WHEEL=/path` install a locally held wheel instead of relying on the board's runtime; those
-two wheels are deliberately not shipped here (`docs/ENVIRONMENT.md`).
+Each install creates `.venvs/<backend>`, installs every dependency from `vendor/` with
+`pip --no-index`, verifies the shipped files against `checksums.sha256` and then runs the backend's
+check, which ends with **one real inference on one frame of the sample clip**. The venvs are
+self-contained - no PYTHONPATH, no LD_LIBRARY_PATH, no system site-packages - and the run scripts
+always use their own venv, refusing to fall back to the system Python. Nothing in this repository
+installs, replaces or reloads a kernel driver: the board's own `pcie-rkep`, `hailo_pci` and
+`librknnrt.so` are used as they are. See `vendor/README.md` for what is bundled.
 
 **Every runner defaults to the clip that ships with this repository**, `video/test.mp4` (the one
 behind every record in `results/`; the records name it `test_640.mp4`, the name it had during the
@@ -125,7 +126,7 @@ re-analysed without re-running the board.
   recomputes and prints those hashes at run time (`model/README.md`).
 - `video/test.mp4` matches `input.video_sha256` in all three records, i.e. the shipped records
   were produced on the shipped clip (`video/test.mp4`, 640x640, 394 frames, 30 fps).
-- `checksums.sha256` covers the four model files, the bundled RKNNLite2 wheel and the sample clip;
+- `checksums.sha256` covers the four model files, the four `vendor/wheels/` wheels and the sample clip;
   `python3 scripts/verify-checksums.py` checks them (line-ending tolerant, unlike `sha256sum -c`),
   and every install script runs exactly that before touching the environment. Each `scripts/check-*.py` ends with one real inference on the sample clip.
 - The copied records were checked field by field against the source project: no timing, per-frame
@@ -153,6 +154,19 @@ re-analysed without re-running the board.
   stream: 49.2 -> 28.3 FPS), so eight annotated outputs would become host-bound.
 - RK182x needs 4 streams before it beats the built-in NPU (1.09x) and 8 streams to lead by 1.27x;
   at 1-2 streams the PCIe round trip makes it the slower of the two.
+
+## Redistribution
+
+Two of the bundled items are vendor packages whose terms are not this project's to decide, and they
+are listed here on purpose so the question is visible before anything is published:
+
+| Item | Where it comes from | Note |
+|---|---|---|
+| `vendor/wheels/hailort-4.23.0-cp311-cp311-linux_aarch64.whl` | Hailo's Developer Zone | HailoRT Python binding; check Hailo's terms before redistributing |
+| `vendor/rknn3/rknn3lite-cp311-aarch64.tar.gz` (generated on the board) | Rockchip's RK182x SDK | check Rockchip's terms before shipping the tarball |
+
+NumPy, OpenCV headless and Rockchip's RKNNLite2 wheel carry their own licences in their
+`*.dist-info` metadata. Kernel drivers are never redistributed or touched by this repository.
 
 ## License
 

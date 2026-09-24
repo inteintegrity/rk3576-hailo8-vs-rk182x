@@ -76,8 +76,10 @@ def probe_dependencies(report: Report) -> bool:
             module = __import__(name)
             report.check(f"{name} imports", True, getattr(module, "__version__", "present"))
         except ImportError as error:
-            ok = report.check(f"{name} imports", False, f"{error}; try: sudo apt install -y "
-                                                      f"python3-{'numpy' if name == 'numpy' else 'opencv'}")
+            ok = report.check(f"{name} imports", False,
+                              f"{error}; it is installed from vendor/wheels by the install script - "
+                              f"re-run it, and if the wheel itself cannot load, install the system "
+                              f"library it needs (for OpenCV: sudo apt install -y libglib2.0-0)")
     return ok
 
 
