@@ -17,6 +17,11 @@ VENDOR="${PROJECT_DIR}/vendor/wheels"
 NUMPY="numpy-1.26.4-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
 OPENCV="opencv_python_headless-4.11.0.86-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
 RKNNLITE="rknn_toolkit_lite2-2.3.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl"
+# the binding declares these two: psutil and ruamel.yaml
+PSUTIL="psutil-7.2.2-cp36-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl"
+RUAMEL="ruamel_yaml-0.19.1-py3-none-any.whl"
+# rknnlite/api/rknn_lite.py reads its own version through pkg_resources, which setuptools 75 provides
+SETUPTOOLS="setuptools-75.8.0-py3-none-any.whl"
 
 fail() { echo "ERROR: $*" >&2; exit 1; }
 
@@ -30,7 +35,7 @@ PYTHON_TAG="$("${PYTHON_BIN}" -c 'import sys; print(f"{sys.version_info.major}.{
 [ "${PYTHON_TAG}" = "3.11" ] || fail "the bundled wheels are CPython 3.11; found ${PYTHON_TAG} (set PYTHON_BIN=/path/to/python3.11)"
 "${PYTHON_BIN}" -c 'import venv' >/dev/null 2>&1 || fail "the venv module is missing; run: sudo apt install -y python3-venv"
 
-for wheel in "${NUMPY}" "${OPENCV}" "${RKNNLITE}"; do
+for wheel in "${NUMPY}" "${OPENCV}" "${RKNNLITE}" "${PSUTIL}" "${RUAMEL}" "${SETUPTOOLS}"; do
     [ -f "${VENDOR}/${wheel}" ] || fail "a bundled wheel is missing: ${VENDOR}/${wheel}"
 done
 
@@ -51,9 +56,9 @@ fi
 VENV_PYTHON="${VENV_DIR}/bin/python"
 "${VENV_PYTHON}" -m pip --version >/dev/null 2>&1 || fail "pip is missing inside ${VENV_DIR}; run: sudo apt install -y python3-venv python3-pip"
 
-echo "installing NumPy, OpenCV and the RKNNLite2 binding from vendor/"
+echo "installing the full dependency set from vendor/"
 "${VENV_PYTHON}" -m pip install --quiet --no-index --no-deps --force-reinstall \
-    "${VENDOR}/${NUMPY}" "${VENDOR}/${OPENCV}" "${VENDOR}/${RKNNLITE}"
+    "${VENDOR}/${NUMPY}" "${VENDOR}/${OPENCV}" "${VENDOR}/${RKNNLITE}" \n    "${VENDOR}/${PSUTIL}" "${VENDOR}/${RUAMEL}" "${VENDOR}/${SETUPTOOLS}"
 
 echo
 "${VENV_PYTHON}" "${PROJECT_DIR}/scripts/check-rk3576.py"

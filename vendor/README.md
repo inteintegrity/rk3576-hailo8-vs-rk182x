@@ -4,14 +4,34 @@ Everything the three environments need that is not already on the board. The ins
 from here with `pip --no-index`, so a board with no network can still be set up, and the venvs are
 self-contained: **no PYTHONPATH, no LD_LIBRARY_PATH, no system site-packages**.
 
-| File in `vendor/wheels/` | Version | Size | Used by |
-|---|---|---:|---|
-| `numpy-1.26.4-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl` | 1.26.4 | 14.2 MB | all three backends |
-| `opencv_python_headless-4.11.0.86-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl` | 4.11.0.86 | 29.5 MB | all three backends |
-| `rknn_toolkit_lite2-2.3.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl` | 2.3.2 | 569 KB | RK3576 built-in NPU |
-| `hailort-4.23.0-cp311-cp311-linux_aarch64.whl` | 4.23.0 | 9.9 MB | Hailo-8 |
+| File in `vendor/wheels/` | Version | Used by |
+|---|---|---|
+| `numpy-1.26.4-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl` | 1.26.4 | all three backends |
+| `opencv_python_headless-4.11.0.86-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl` | 4.11.0.86 | all three backends |
+| `rknn_toolkit_lite2-2.3.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl` | 2.3.2 | RK3576 built-in NPU |
+| `psutil-7.2.2-cp36-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl` | 7.2.2 | declared by rknn-toolkit-lite2 |
+| `ruamel_yaml-0.19.1-py3-none-any.whl` | 0.19.1 | declared by rknn-toolkit-lite2 |
+| `setuptools-75.8.0-py3-none-any.whl` | 75.8.0 | `rknnlite/api/rknn_lite.py` reads its version through `pkg_resources` |
+| `hailort-4.23.0-cp311-cp311-linux_aarch64.whl` | 4.23.0 | Hailo-8 |
+| `argcomplete-3.7.2-py3-none-any.whl` | 3.7.2 | declared by hailort |
+| `contextlib2-21.6.0-py2.py3-none-any.whl` | 21.6.0 | declared by hailort |
+| `future-1.0.0-py3-none-any.whl` | 1.0.0 | declared by hailort |
+| `netaddr-1.3.0-py3-none-any.whl` | 1.3.0 | declared by hailort (Ethernet device helpers) |
 
-All four are CPython 3.11 aarch64 wheels; the install scripts refuse to run on another
+Two declared dependencies are deliberately **not** bundled, and the installers work without them:
+
+- `netifaces` (declared by hailort) is imported only by
+  `hailo_platform/pyhailort/ethernet_utils.py`, which the PCIe import path never touches - it is for
+  Hailo devices that enumerate over Ethernet. No CPython 3.11 aarch64 wheel of it exists on PyPI.
+- `transformers` (declared by rknn3-toolkit-lite) is only used by its LLM helper
+  (`rknn3lite/api/rknn3_lite_llm.py`), which `rknn3lite/__init__.py` does not import.
+
+The dependency list of each backend was derived from the wheels' `Requires-Dist` metadata plus a
+static scan of every import in the installed packages, and each list is installed with
+`pip --no-index --find-links vendor/wheels`, so a missing file fails the install instead of surfacing
+at run time.
+
+All of these are CPython 3.11 aarch64 wheels or pure-Python wheels; the install scripts refuse to run on another
 architecture or interpreter rather than failing later. Every file here is covered by
 `checksums.sha256` in the repository root and verified by `scripts/verify-checksums.py` before an
 install touches anything.

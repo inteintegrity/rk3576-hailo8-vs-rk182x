@@ -42,6 +42,8 @@ fi
 VENV_PYTHON="${VENV_DIR}/bin/python"
 "${VENV_PYTHON}" -m pip --version >/dev/null 2>&1 || fail "pip is missing inside ${VENV_DIR}"
 
+# rknn3-toolkit-lite declares numpy and transformers; transformers is only used by the LLM helper
+# (rknn3lite/api/rknn3_lite_llm.py), which this project never imports
 echo "installing NumPy and OpenCV from vendor/"
 "${VENV_PYTHON}" -m pip install --quiet --no-index --no-deps --force-reinstall \
     "${VENDOR}/${NUMPY}" "${VENDOR}/${OPENCV}"
