@@ -3,6 +3,9 @@ __pycache__/
 *.pyc
 *.pyo
 
+# per-backend virtual environments (created by scripts/install-*.sh on the board)
+.venvs/
+
 # what a run writes (kept out of git; the shipped records live in results/)
 out/
 annotated.mp4

@@ -21,6 +21,12 @@ every stream at its full rate rather than adding capacity. Full write-ups:
 ## What is in this folder
 
 ```
+scripts/install-{rk3576,hailo8,rk182x}.sh  create .venvs/<backend>, install the wheel, run the check
+scripts/check-{rk3576,hailo8,rk182x}.py    aarch64, Python 3.11, binding, driver, model, clip, 1 frame
+scripts/run-{rk3576,hailo8,rk182x}.sh      run a clip through that backend's venv (sample clip by default)
+scripts/_probe.py                          shared helpers for the three checks
+wheels/                                    RKNNLite2 2.3.2 wheel for CPython 3.11 aarch64 (569 KB)
+checksums.sha256                           sha256 of the models, the wheel and the sample clip
 Hailo/Hailo8/run_video_inference.py        Hailo-8, one stream, annotated MP4 + JSON record
 Hailo/Hailo8/run_streams_aggregate.py      Hailo-8, N streams into one device, aggregate FPS
 rk3576/run_video_inference.py              built-in NPU, one stream
@@ -32,7 +38,6 @@ common/draw_detections.py                  annotation and timing summaries (shar
 common/hailo_pipeline.py                   HailoRT InferModel pipeline (N inferences in flight)
 common/rknn_helpers.py                     RKNN head collection, dequantization, core masks
 common/artifacts.py                        sha256 of the files a run used
-common/check_environment.py                reports which backend runtime is installed here
 common/make_final_figures.py               the two chart PNGs, generated from the JSON records
 common/make_osd_figure.py                  the three-up screenshot mosaic
 common/check_osd_figure.py                 pixel-level verification of those screenshots
@@ -59,12 +64,41 @@ Model provenance, per-file hashes and the exact record edits made for this deliv
 
 ## Run it
 
-The three single-stream runners and the multi-stream benchmark are the four entry points. Install
-or check the backend runtimes first (`docs/ENVIRONMENT.md`, `python3 common/check_environment.py`),
-then run on the board. **Every runner defaults to the clip that ships with this repository**,
-`video/test.mp4` (the one behind every record in `results/`; the records name it `test_640.mp4`,
-the name it had during the runs), so the `--video` flag can simply be left out. Any other clip
-works too - pass `--video <path>` and it is letterboxed to 640x640 automatically.
+On the board, one triple per backend - install once, then run any clip:
+
+```bash
+bash scripts/install-rk3576.sh     # RKNNLite2 wheel from wheels/, board numpy/OpenCV reused
+bash scripts/run-rk3576.sh         # the bundled sample clip; pass a path for another clip
+
+bash scripts/install-hailo8.sh     # uses the HailoRT already on the board
+bash scripts/run-hailo8.sh
+
+bash scripts/install-rk182x.sh     # uses the RKNN3 runtime already on the board
+bash scripts/run-rk182x.sh
+```
+
+Each install creates `.venvs/<backend>` (a venv with `--system-site-packages`, so nothing is
+downloaded), verifies the shipped files against `checksums.sha256` and then runs the backend's
+check, which ends with **one real inference on one frame of the sample clip**. The run scripts
+always use that venv and refuse to fall back to the system Python. `HAILORT_WHEEL=/path` and
+`RKNN3_WHEEL=/path` install a locally held wheel instead of relying on the board's runtime; those
+two wheels are deliberately not shipped here (`docs/ENVIRONMENT.md`).
+
+**Every runner defaults to the clip that ships with this repository**, `video/test.mp4` (the one
+behind every record in `results/`; the records name it `test_640.mp4`, the name it had during the
+runs), so the video argument can simply be left out. Any other clip works too - it is letterboxed
+to 640x640 automatically.
+
+The multi-stream tools have no wrapper (they need more arguments), so call the runners directly -
+still through a venv:
+
+```bash
+.venvs/rk3576/bin/python common/run_video_streams_benchmark.py --backend rk3576     --model model/rk3576/yolo26n_rk3576_int8.rknn --instances 1,2,4,8 --frames 200     --json out/rk3576_multi.json
+```
+
+The single-stream runners can also be called directly, with the same arguments they document
+(`python3 rk3576/run_video_inference.py --help`); the wrappers just fill in the model paths and the
+output directory:
 
 ```bash
 # Hailo-8, one stream (4 inferences in flight)
@@ -92,9 +126,6 @@ python3 common/run_video_streams_benchmark.py --backend rk1820 \
     --model model/rk1820/yolo26n_rk1820_int8.rknn \
     --weight model/rk1820/yolo26n_rk1820_int8.weight \
     --instances 1,2,4,8 --frames 300 --json out/rk1820_multi.json
-
-# which runtimes are present on this board (exit code 0 = all ready)
-python3 common/check_environment.py
 
 # figures and the screenshot verification (host side, from the JSON records)
 python3 common/make_final_figures.py
@@ -138,6 +169,9 @@ re-analysed without re-running the board.
   recomputes and prints those hashes at run time (`model/README.md`).
 - `video/test.mp4` matches `input.video_sha256` in all three records, i.e. the shipped records
   were produced on the shipped clip (`video/test.mp4`, 640x640, 394 frames, 30 fps).
+- `checksums.sha256` covers the four model files, the bundled RKNNLite2 wheel and the sample clip;
+  `sha256sum -c checksums.sha256` verifies them, and every install script runs it before touching
+  the environment. Each `scripts/check-*.py` ends with one real inference on the sample clip.
 - The copied records were checked field by field against the source project: no timing, per-frame
   detection, frame count or hash differs. The description/naming edits that were made are listed in
   `results/README.md`.
