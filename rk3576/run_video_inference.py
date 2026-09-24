@@ -92,8 +92,7 @@ def main() -> None:
     parser.add_argument("--max-frames", type=int, default=0, help="0 means every frame")
     parser.add_argument("--device-fps", type=float, default=34.88,
                         help="inference-only rate of this client, printed on the clip's banner as "
-                             "'infer only' (34.88 is the value measured on this board and shown in "
-                             "results/single_stream/rk3576_npu/frame200.png)")
+                             "'infer only' (34.88 is the reference value measured on the source board)")
     parser.add_argument("--device-latency-ms", type=float, default=28.67)
     args = parser.parse_args()
     args.video = _resolve_video(args.video, Path(__file__).resolve().parent)
@@ -207,8 +206,7 @@ def main() -> None:
         # The pipeline layer here is the RKNN call plus host decode/NMS; the frame read and the
         # letterbox happen before `infer_started` and are covered by read_infer_times instead.
         # The Hailo-8 runner's pipeline figure does include its read and letterbox, so the two
-        # columns are not the same measurement - stated in the record's timing note and in
-        # results/README.md.
+        # columns are not the same measurement; both are retained in the JSON report.
         pipeline_times.append(infer_ms + decode_ms)
         read_infer_times.append((time.perf_counter() - read_started) * 1000.0)
 

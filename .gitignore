@@ -19,10 +19,6 @@ video/*
 # because they are 64 MB of derived media (see results/README.md)
 results/clips/
 
-# the RKNN3 package is generated on the board by install-rk182x.sh (see vendor/README.md)
-vendor/rknn3/*.tar.gz
-vendor/rknn3/*.sha256
-
 # conversion intermediates (produced by the vendor toolchains, not part of the delivery)
 *.onnx
 *.pt

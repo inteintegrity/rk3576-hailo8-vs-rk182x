@@ -1,0 +1,24 @@
+{
+  "model": "YOLO26n",
+  "input": {
+    "file": "video/test.mp4",
+    "resolution": [640, 640],
+    "frames": 394,
+    "sha256": "30ec4406e62d37a164c073d44f71d6a7cad70a8eddd26daf5a792a0eba2a2218"
+  },
+  "single_stream_pipeline_fps": {
+    "hailo8": 49.23,
+    "rk3576": 23.54,
+    "rk182x": 17.45
+  },
+  "eight_stream_aggregate_fps": {
+    "hailo8": 51.60,
+    "rk3576": 69.65,
+    "rk182x": 88.58
+  },
+  "raw_artifacts": {
+    "release": "v1.0.0",
+    "asset": "rk3576-hailo8-vs-rk182x-benchmark-artifacts-v1.0.0.zip",
+    "sha256": "336b595e40355e064ff7F6967000E8BF6ADEBA5B3339FD6F5F2E571A11220DC8"
+  }
+}

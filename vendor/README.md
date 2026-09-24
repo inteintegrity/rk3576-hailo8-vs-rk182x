@@ -16,20 +16,18 @@ architecture or interpreter rather than failing later. Every file here is covere
 `checksums.sha256` in the repository root and verified by `scripts/verify-checksums.py` before an
 install touches anything.
 
-`vendor/rknn3/` is different: the RKNN3 Python binding has no wheel in this repository, so
-`scripts/install-rk182x.sh` builds one portable package from the environment that is already on the
-board:
+`vendor/rknn3/` is different: Rockchip distributes the RKNN3 Python binding as part of the RK182x
+SDK rather than as a wheel. This repository therefore ships the portable CPython 3.11 aarch64
+package taken from that SDK environment:
 
 ```
-vendor/rknn3/rknn3lite-cp311-aarch64.tar.gz          produced by the installer, not shipped
-vendor/rknn3/rknn3lite-cp311-aarch64.tar.gz.sha256   its digest
+vendor/rknn3/rknn3lite-cp311-aarch64.tar.gz
 ```
 
-The installer looks for `rknn3lite` in the known board locations (`~/rk1820_yolo/rknn3_env`,
-`~/rknn3_env`, `/opt/rknn3/rknn3_env`, or wherever the system interpreter imports it), packs the
-package with its metadata, unpacks it into `.venvs/rk182x`, and then proves it by running one real
-inference. The same tarball can be copied to another board; the generated files are git-ignored
-because they are produced on the board, not authored here.
+The installer verifies the tarball through `checksums.sha256`, unpacks it into `.venvs/rk182x`, and
+then proves it by running one real inference. Its fallback discovery logic remains for SDK images
+that replace the shipped package deliberately, but a fresh clone no longer depends on an older
+`~/rk1820_yolo/rknn3_env` directory.
 
 ## Kernel drivers
 
@@ -46,9 +44,9 @@ published anywhere:
   Hailo through their Developer Zone. Its terms are Hailo's; check them before redistributing the
   file. (The board also needs Hailo's own `.deb` packages for the driver and `libhailort.so`, which
   are not part of this repository.)
-- **`rknn3lite`** (inside the generated tarball) - Rockchip's on-board Python interface for the
-  RK182x, distributed with the RK182x SDK. Same question: check Rockchip's terms before shipping
-  the tarball.
+- **`rknn3lite`** (inside `vendor/rknn3/rknn3lite-cp311-aarch64.tar.gz`) - Rockchip's on-board
+  Python interface for the RK182x, distributed with the RK182x SDK. Check Rockchip's terms before
+  redistributing the tarball.
 
 The three aarch64 wheels from PyPI (NumPy, OpenCV headless) and the Rockchip RKNNLite2 wheel are
 covered by their own licences, which are collected in the wheel metadata (`*.dist-info/LICENSE*`).

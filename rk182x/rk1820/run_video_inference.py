@@ -209,8 +209,7 @@ def main() -> None:
         # The pipeline layer here is the RKNN call plus host decode/NMS; the frame read and the
         # letterbox happen before `infer_started` and are covered by read_infer_times instead.
         # The Hailo-8 runner's pipeline figure does include its read and letterbox, so the two
-        # columns are not the same measurement - stated in the record's timing note and in
-        # results/README.md.
+        # columns are not the same measurement; both are retained in the JSON report.
         pipeline_times.append(infer_ms + decode_ms)
         read_infer_times.append((time.perf_counter() - read_started) * 1000.0)
 

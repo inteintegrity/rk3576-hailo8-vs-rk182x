@@ -53,7 +53,7 @@ VENV_PYTHON="${VENV_DIR}/bin/python"
 
 echo "installing NumPy, OpenCV and the RKNNLite2 binding from vendor/"
 "${VENV_PYTHON}" -m pip install --quiet --no-index --no-deps --force-reinstall \
-    "${VENDOR}/${NUMPY}" "${VENDOR}/${OPENCV}" \
+    "${VENDOR}/${NUMPY}" "${VENDOR}/${OPENCV}" "${VENDOR}/${RKNNLITE}"
 
 echo
 "${VENV_PYTHON}" "${PROJECT_DIR}/scripts/check-rk3576.py"

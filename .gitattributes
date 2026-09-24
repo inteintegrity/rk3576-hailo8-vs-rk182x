@@ -5,3 +5,10 @@
 *.json text eol=lf
 *.txt text eol=lf
 *.sha256 text eol=lf
+*.hef binary
+*.mp4 binary
+*.png binary
+*.rknn binary
+*.tar.gz binary
+*.weight binary
+*.whl binary

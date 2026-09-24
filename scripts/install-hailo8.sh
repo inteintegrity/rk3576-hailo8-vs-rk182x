@@ -56,7 +56,7 @@ VENV_PYTHON="${VENV_DIR}/bin/python"
 
 echo "installing NumPy, OpenCV and the HailoRT binding from vendor/"
 "${VENV_PYTHON}" -m pip install --quiet --no-index --no-deps --force-reinstall \
-    "${VENDOR}/${NUMPY}" "${VENDOR}/${OPENCV}" \
+    "${VENDOR}/${NUMPY}" "${VENDOR}/${OPENCV}" "${VENDOR}/${HAILORT}"
 
 echo
 "${VENV_PYTHON}" "${PROJECT_DIR}/scripts/check-hailo8.py"

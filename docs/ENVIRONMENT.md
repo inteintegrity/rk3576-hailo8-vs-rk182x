@@ -92,36 +92,13 @@ missing. Redistribution questions about the Hailo and RKNN3 packages are listed 
 | runner imports | `rknn3lite.api.rknn3_lite.RKNN3Lite` (the on-board Python interface that wraps the RKNN3 runtime's C API) |
 | also needed | the RKNN3 runtime on the board, and the module seated in the M.2 slot (the runtime reports the device) |
 | version rule | **toolkit and runtime versions must match**: the source project's checklist records that a model compiled with toolkit 1.0.5 failed on this board's 1.0.4 runtime with `RKNN3_ERR_FAIL`, which is why everything here is 1.0.4 |
-| where it comes from | upstream is Rockchip's [airockchip/rknn3-toolkit](https://github.com/airockchip/rknn3-toolkit) (on-board Python interface in `rknn3-toolkit-lite/`, runtime in `rknn3-runtime/`, SDK on Rockchip's cloud drive with access code `rknn`). This repository ships no RKNN3 wheel; `install-rk182x.sh` turns the environment already present on the board into the portable package instead |
-| install | handled by `scripts/install-rk182x.sh`: it packs the RKNN3 environment already on the board into `vendor/rknn3/rknn3lite-cp311-aarch64.tar.gz` and unpacks it into `.venvs/rk182x` |
+| where it comes from | upstream is Rockchip's [airockchip/rknn3-toolkit](https://github.com/airockchip/rknn3-toolkit) (on-board Python interface in `rknn3-toolkit-lite/`, runtime in `rknn3-runtime/`, SDK on Rockchip's cloud drive with access code `rknn`). This repository ships the CPython 3.11 aarch64 binding as `vendor/rknn3/rknn3lite-cp311-aarch64.tar.gz` |
+| install | handled by `scripts/install-rk182x.sh`: it verifies and unpacks the bundled binding into `.venvs/rk182x`; the board's kernel driver and runtime libraries remain unchanged |
 | check | `bash scripts/install-rk182x.sh` (or `.venvs/rk182x/bin/python scripts/check-rk182x.py`); the vendor's `rknn3_model_test` benchmark is the device-level check |
 | on this board | RKNN3 runtime 1.0.4, module at the M.2 slot; the model in `model/rk1820/` is compiled for **one** core, and the runtime refuses a mask that does not match, so the runners request a mask and record the one that was accepted |
 
-`common/check_osd_figure.py` is deliberately not part of this list: it needs no accelerator, only
-OpenCV (see below).
-
-## Host side (figures and verification)
-
-```
-pip install -r requirements.txt
-```
-
-- `common/make_final_figures.py` needs matplotlib and only reads the JSON records.
-- `common/make_osd_figure.py` and `common/check_osd_figure.py` need OpenCV.
-
-### The one build-dependent step
-
-`common/check_osd_figure.py` re-renders the on-screen banner with the same font metrics the clip
-was drawn with and compares it pixel by pixel. OpenCV 4.x and 5.x render the Hershey font with
-different metrics - the same two-line banner comes out 482x78 px under 4.x and 402x86 px under
-5.x - so the check is only meaningful under the same OpenCV major version that drew the frame.
-Each result JSON records that version (`environment.opencv`), and the script reports the devices
-it cannot verify as "skipped" with the version to use instead of reporting a false failure.
-
-All three screenshots in this folder are verified in `results/single_stream/frame200_check.json`:
-`hailo8` and `rk3576_npu` under OpenCV 4.11 (the frames were drawn with 4.6 / 4.11, which render
-identically here), `rk1820` under OpenCV 5.0. To reproduce, run the script once per major version
-- the report accumulates both runs.
+The full result records, screenshots and the figure-generation/verification tools are published in
+the `v1.0.0` benchmark-artifacts Release asset rather than the main branch.
 
 ## Timing methodology
 
@@ -130,7 +107,7 @@ Every runner reports three layers, so host-side work is never presented as accel
 | Field in the JSON | What it measures |
 |---|---|
 | `python_infer_only_fps` / `device_service_fps` | the accelerator call itself (Hailo-8: the device service rate with 4 inferences in flight; RK3576 / RK182x: the per-call time, which includes the PCIe round trip on RK182x) |
-| `python_pipeline_fps` (`pipeline_without_io`) | the accelerator call plus host decode and NMS. The Hailo-8 runner measures it over the whole loop iteration and therefore also includes the frame read and the letterbox; the two Rockchip runners exclude those two and record them separately in `read_letterbox_infer_decode`. `results/README.md` gives the like-for-like figures. |
+| `python_pipeline_fps` (`pipeline_without_io`) | the accelerator call plus host decode and NMS. The Hailo-8 runner measures it over the whole loop iteration and therefore also includes the frame read and the letterbox; the two Rockchip runners exclude those two and record them separately in `read_letterbox_infer_decode`. The full Release records retain both measurements. |
 | `python_end_to_end_fps` | + drawing and MP4 writing (the annotated pass) |
 
 The multi-stream records report aggregate throughput instead: total processed frames per second

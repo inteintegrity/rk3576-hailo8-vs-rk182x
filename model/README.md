@@ -13,9 +13,9 @@ NMS are the host's job in all three cases, and the host code is shared
 | `rk1820/yolo26n_rk1820_int8.rknn` | RK182x | Rockchip's official YOLO26 quantization recipe (w8a8, score branch w16a16), compiled for **one** NPU core | 221,240 B | `77eedf56ad8647fb9cd033b665f9efc9e34c0a5dfe390bc9c526df1ee8cff301` |
 | `rk1820/yolo26n_rk1820_int8.weight` | RK182x | companion weight file for the RKNN3 model | 3,536,896 B | `4bb04ca1800a823f70053b9991658ab47b2f9ad8b97b432d3b792e0a9604789f` |
 
-The four hashes are the same ones stored inside `results/single_stream/<device>/video_result.json`
-(`model.*_sha256`), i.e. the records in this folder were produced by exactly these files. Each
-runner recomputes the hash at run time and prints it.
+The four hashes are the same ones stored inside the full per-device records in the `v1.0.0`
+benchmark-artifacts Release asset (`model.*_sha256`). Each runner recomputes the hash at run time
+and prints it.
 
 Notes:
 

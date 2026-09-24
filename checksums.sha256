@@ -6,4 +6,5 @@
 7ab55401287bfec946ced39700c053796e7cc0e3acbef09993a9ad2adba6ca6e  vendor/wheels/numpy-1.26.4-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
 6efabcaa9df731f29e5ea9051776715b1bdd1845d7c9530065c7951d2a2899eb  vendor/wheels/opencv_python_headless-4.11.0.86-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
 bda74f1179e15fccb8726054a24898982522784b65bb340b20146955d254e800  vendor/wheels/rknn_toolkit_lite2-2.3.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+dda21f81cee27731cc2c23ae0fa77e12470edda2e01817034df103744edb0c2b  vendor/rknn3/rknn3lite-cp311-aarch64.tar.gz
 30ec4406e62d37a164c073d44f71d6a7cad70a8eddd26daf5a792a0eba2a2218  video/test.mp4
