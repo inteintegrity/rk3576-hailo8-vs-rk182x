@@ -60,8 +60,17 @@ VENV_PYTHON="${VENV_DIR}/bin/python"
 "${VENV_PYTHON}" -m pip --version >/dev/null 2>&1 || fail "pip is missing inside ${VENV_DIR}; run: sudo apt install -y python3-venv python3-pip"
 
 echo "installing the full dependency set from vendor/"
-"${VENV_PYTHON}" -m pip install --quiet --no-index --no-deps --force-reinstall \
-    "${VENDOR}/${NUMPY}" "${VENDOR}/${OPENCV}" "${VENDOR}/${HAILORT}" \n    "${VENDOR}/${ARGCOMPLETE}" "${VENDOR}/${CONTEXTLIB2}" "${VENDOR}/${FUTURE}" "${VENDOR}/${NETADDR}"
+# every wheel of the dependency set, listed explicitly; a missing file fails the install
+WHEELS=(
+    "${VENDOR}/${NUMPY}"
+    "${VENDOR}/${OPENCV}"
+    "${VENDOR}/${HAILORT}"
+    "${VENDOR}/${ARGCOMPLETE}"
+    "${VENDOR}/${CONTEXTLIB2}"
+    "${VENDOR}/${FUTURE}"
+    "${VENDOR}/${NETADDR}"
+)
+"${VENV_PYTHON}" -m pip install --quiet --no-index --no-deps --force-reinstall "${WHEELS[@]}"
 
 echo
 "${VENV_PYTHON}" "${PROJECT_DIR}/scripts/check-hailo8.py"

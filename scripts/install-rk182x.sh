@@ -45,8 +45,12 @@ VENV_PYTHON="${VENV_DIR}/bin/python"
 # rknn3-toolkit-lite declares numpy and transformers; transformers is only used by the LLM helper
 # (rknn3lite/api/rknn3_lite_llm.py), which this project never imports
 echo "installing NumPy and OpenCV from vendor/"
-"${VENV_PYTHON}" -m pip install --quiet --no-index --no-deps --force-reinstall \
-    "${VENDOR}/${NUMPY}" "${VENDOR}/${OPENCV}"
+# every wheel of the dependency set, listed explicitly; a missing file fails the install
+WHEELS=(
+    "${VENDOR}/${NUMPY}"
+    "${VENDOR}/${OPENCV}"
+)
+"${VENV_PYTHON}" -m pip install --quiet --no-index --no-deps --force-reinstall "${WHEELS[@]}"
 
 VENV_SITE="$("${VENV_PYTHON}" -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')"
 echo "installing the RKNN3 binding into ${VENV_SITE}"
