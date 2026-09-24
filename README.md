@@ -18,49 +18,6 @@ every stream at its full rate rather than adding capacity. Full write-ups:
 [`docs/REPORT.md`](docs/REPORT.md) (Chinese, all tables),
 [`docs/ARTICLE_zh.md`](docs/ARTICLE_zh.md), [`docs/ARTICLE_en.md`](docs/ARTICLE_en.md).
 
-## What is in this folder
-
-```
-scripts/install-{rk3576,hailo8,rk182x}.sh  create .venvs/<backend>, install the wheel, run the check
-scripts/check-{rk3576,hailo8,rk182x}.py    aarch64, Python 3.11, binding, driver, model, clip, 1 frame
-scripts/run-{rk3576,hailo8,rk182x}.sh      run a clip through that backend's venv (sample clip by default)
-scripts/_probe.py                          shared helpers for the three checks
-wheels/                                    RKNNLite2 2.3.2 wheel for CPython 3.11 aarch64 (569 KB)
-checksums.sha256                           sha256 of the models, the wheel and the sample clip
-Hailo/Hailo8/run_video_inference.py        Hailo-8, one stream, annotated MP4 + JSON record
-Hailo/Hailo8/run_streams_aggregate.py      Hailo-8, N streams into one device, aggregate FPS
-rk3576/run_video_inference.py              built-in NPU, one stream
-rk182x/rk1820/run_video_inference.py       RK182x, one stream
-common/run_video_streams_benchmark.py      built-in NPU / RK182x, 1..8 streams, aggregate FPS
-common/postprocess_common.py               letterbox, sigmoid, box mapping, NMS (shared)
-common/postprocess_yolo26.py               YOLO26 head decode (shared)
-common/draw_detections.py                  annotation and timing summaries (shared)
-common/hailo_pipeline.py                   HailoRT InferModel pipeline (N inferences in flight)
-common/rknn_helpers.py                     RKNN head collection, dequantization, core masks
-common/artifacts.py                        sha256 of the files a run used
-common/make_final_figures.py               the two chart PNGs, generated from the JSON records
-common/make_osd_figure.py                  the three-up screenshot mosaic
-common/check_osd_figure.py                 pixel-level verification of those screenshots
-video/test.mp4                            the clip every record was measured on (394 frames)
-model/Hailo/yolo26n_hailo8_official.hef    Hailo's prebuilt HEF (8.35 MiB)
-model/rk3576/yolo26n_rk3576_int8.rknn      RKNN2 w8a8 (7.34 MiB)
-model/rk1820/yolo26n_rk1820_int8.rknn      RKNN3 w8a8 + score branch w16a16 (216 KiB)
-model/rk1820/yolo26n_rk1820_int8.weight    RKNN3 companion weight file (3.37 MiB)
-results/single_stream/<device>/            one run per device: JSON record + frame-200 screenshot
-results/single_stream/frame200_check.json  pixel-level verification of those three screenshots
-results/multi_stream/                      aggregate-throughput records, 1/2/4/8 streams
-results/figures/                           the two charts, the screenshot mosaic, three stills
-results/clips/                             the two published comparison videos (1 stream, 8 streams);
-                                           hosted on the SenseCraft CDN and not tracked in git
-results/README.md                          file-by-file inventory, including what each still shows
-docs/REPORT.md                             the full report with every table (Chinese)
-docs/ARTICLE_zh.md  docs/ARTICLE_en.md      the two published write-ups
-docs/ENVIRONMENT.md                        runtime versions, per-layer timing definitions
-model/README.md                            model provenance and hashes
-```
-
-Model provenance, per-file hashes and the exact record edits made for this delivery are listed in
-[`results/README.md`](results/README.md) and [`model/README.md`](model/README.md).
 
 ## Run it
 
