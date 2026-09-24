@@ -148,18 +148,18 @@ RK182x 88.6 FPS > RK3576 内置 NPU 69.7 FPS > Hailo-8 51.6 FPS。**
 四个入口脚本（板端）：
 
 ```bash
-python Hailo/Hailo8/run_video_inference.py --hef model/Hailo/yolo26n_hailo8_official.hef \
+python3 Hailo/Hailo8/run_video_inference.py --hef model/Hailo/yolo26n_hailo8_official.hef \
     --video <clip.mp4> --out-dir out/hailo8 --depth 4
-python rk3576/run_video_inference.py --model model/rk3576/yolo26n_rk3576_int8.rknn \
+python3 rk3576/run_video_inference.py --model model/rk3576/yolo26n_rk3576_int8.rknn \
     --video <clip.mp4> --out-dir out/rk3576
-python rk182x/rk1820/run_video_inference.py --model model/rk1820/yolo26n_rk1820_int8.rknn \
+python3 rk182x/rk1820/run_video_inference.py --model model/rk1820/yolo26n_rk1820_int8.rknn \
     --weight model/rk1820/yolo26n_rk1820_int8.weight --video <clip.mp4> --out-dir out/rk1820
-python common/run_video_streams_benchmark.py --backend rk3576 \
+python3 common/run_video_streams_benchmark.py --backend rk3576 \
     --model model/rk3576/yolo26n_rk3576_int8.rknn --video <clip.mp4> --instances 1,2,4,8 --frames 200
 # RK182x 那一次记录用的是 --frames 300，见 results/README.md
 ```
 
-图表与校验（主机）：`python common/make_final_figures.py`、`python common/make_osd_figure.py`、
-`python common/check_osd_figure.py`。每个 runner 会在输出目录写 `video_result.json`
+图表与校验（主机）：`python3 common/make_final_figures.py`、`python3 common/make_osd_figure.py`、
+`python3 common/check_osd_figure.py`。每个 runner 会在输出目录写 `video_result.json`
 （逐帧检测 + 各层耗时）与 `annotated.mp4`。运行环境版本见 `docs/ENVIRONMENT.md`，
 记录中每个文件与字段的说明见 `results/README.md`。

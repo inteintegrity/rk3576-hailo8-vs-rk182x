@@ -23,8 +23,8 @@ major version that drew the frame - which each result JSON records. For a device
 drawn with another major version the script reports "skipped" with the version to use instead of
 failing; run it once per build to cover all three.
 
-    python common/check_osd_figure.py --clips <dir>       # dir holds annotated_<device>.mp4
-    PYTHONPATH=<opencv-4.x> python common/check_osd_figure.py
+    python3 common/check_osd_figure.py --clips <dir>       # dir holds annotated_<device>.mp4
+    PYTHONPATH=<opencv-4.x> python3 common/check_osd_figure.py
 """
 
 from __future__ import annotations

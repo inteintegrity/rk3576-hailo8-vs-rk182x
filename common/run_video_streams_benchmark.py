@@ -12,7 +12,7 @@ Streams may outnumber NPU cores; extra streams then share cores round-robin, whi
 deployment does when it has more cameras than the accelerator has cores.
 
 Usage (on the board):
-    python common/run_video_streams_benchmark.py --backend rk1820 \
+    python3 common/run_video_streams_benchmark.py --backend rk1820 \
         --model model/rk1820/yolo26n_rk1820_int8.rknn \
         --weight model/rk1820/yolo26n_rk1820_int8.weight \
         --video <clip.mp4> --instances 1,2,4,8 --frames 200 --json out/rk1820_multi.json

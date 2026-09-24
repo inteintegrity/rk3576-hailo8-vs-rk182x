@@ -26,7 +26,7 @@ The vendor runtimes come from the vendor's installer and must match the installe
 and the RKNN3 runtime comes with the RK182x SDK. The runners import them inside `main()`, so
 `--help`, the figure generators and the checks work on a host without them.
 
-`python rk182x/rk1820/run_video_inference.py --help` etc. therefore runs on any machine with
+`python3 rk182x/rk1820/run_video_inference.py --help` etc. therefore runs on any machine with
 numpy and OpenCV, which is what makes the code inspectable without the hardware.
 
 ## Installing each backend
@@ -39,8 +39,8 @@ was executed by this project's scripts - the runners only import the result.
 The one command that covers all three at once is the checker:
 
 ```bash
-python common/check_environment.py            # all three backends, exit code 0 when all are ready
-python common/check_environment.py --backend rk3576 --json out/environment.json
+python3 common/check_environment.py            # all three backends, exit code 0 when all are ready
+python3 common/check_environment.py --backend rk3576 --json out/environment.json
 ```
 
 It imports each runtime, prints the module path, the version it reports and (on the board) the
@@ -55,7 +55,7 @@ helper binary or shared library next to it, and exits non-zero if anything is mi
 | version rule | the HailoRT user-space package (and its Python bindings) must match the installed driver and firmware version exactly |
 | where it comes from | Hailo's Developer Zone: the HailoRT packages and the AI Software Suite; the driver package is the board-specific one for the host's kernel. Hailo's own installation guide is `docs/GETTING_STARTED.rst` in [hailo_model_zoo](https://github.com/hailo-ai/hailo_model_zoo) |
 | install | Hailo does not publish these on PyPI: download the board's HailoRT `.deb` (or the AI Software Suite) and the PCIe driver for your kernel from the Developer Zone, install the driver first, then HailoRT, then confirm the Python bindings import. There is no public mirror, which is why this delivery cannot ship one |
-| check | `hailortcli --version`, then `hailortcli fw-control identify` with the module in the M.2 slot (device, firmware, PCIe link), and `python -c "import hailo_platform"`; `python common/check_environment.py --backend hailo8` does the last two |
+| check | `hailortcli --version`, then `hailortcli fw-control identify` with the module in the M.2 slot (device, firmware, PCIe link), and `python3 -c "import hailo_platform"`; `python3 common/check_environment.py --backend hailo8` does the last two |
 | on this board | HailoRT 4.23.0, module at `0000:01:00.0`, PCIe **Gen2 x1** (the module supports Gen3 x4) |
 
 ### RK3576 built-in NPU
@@ -67,7 +67,7 @@ helper binary or shared library next to it, and exits non-zero if anything is mi
 | version rule | the `rknn_toolkit_lite2` wheel must match the board's Python (3.11 here) and the `librknnrt.so` that ships with it; models must be compiled for the same runtime generation |
 | where it comes from | Rockchip's [airockchip/rknn-toolkit2](https://github.com/airockchip/rknn-toolkit2): the board wheel is `rknn-toolkit-lite2/packages/rknn_toolkit_lite2-2.3.2-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl` (cp37-cp312 for the other Python versions) and the runtime library is `rknpu2/runtime/Linux/librknn_api/aarch64/librknnrt.so`; the full release is on Rockchip's cloud drive (fetch code `rknn`). Toolkit2 v2.3.2 is current and lists RK3576 and Python 3.6-3.12 |
 | install | `pip install <wheel>` on the board, then put `librknnrt.so` where the loader finds it (`sudo cp librknnrt.so /usr/lib/ && sudo ldconfig`). Wheel and library must come from the same release |
-| check | `python common/check_environment.py --backend rk3576`, or `python -c "from rknnlite.api import RKNNLite; print(RKNNLite().get_sdk_version())"`; `ldconfig -p` lists it under `librknnrt.so` |
+| check | `python3 common/check_environment.py --backend rk3576`, or `python3 -c "from rknnlite.api import RKNNLite; print(RKNNLite().get_sdk_version())"`; `ldconfig -p` lists it under `librknnrt.so` |
 | on this board | librknnrt 2.3.0, two NPU cores (`core_mask` `0x3` selects both, `0x1`/`0x2` one each). The 2.3.2 wheel carries its own `librknnrt.so`; install the release whose runtime you want, keeping wheel and library together |
 
 ### RK182x
@@ -79,7 +79,7 @@ helper binary or shared library next to it, and exits non-zero if anything is mi
 | version rule | **toolkit and runtime versions must match**: the source project's checklist records that a model compiled with toolkit 1.0.5 failed on this board's 1.0.4 runtime with `RKNN3_ERR_FAIL`, which is why everything here is 1.0.4 |
 | where it comes from | Rockchip's [airockchip/rknn3-toolkit](https://github.com/airockchip/rknn3-toolkit): the board wheel is `rknn3-toolkit-lite/packages/rknn3_toolkit_lite-<version>-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl` (1.1.0 is published, with a `requirements.txt` beside it), the runtime library is in `rknn3-runtime/`, and the SDK with firmware, documentation and pre-converted models is on Rockchip's cloud drive (access code `rknn`). The board vendor's own walkthrough: Seeed's [RK3588/RK182x RKNN3 deployment guide](https://sensecraft.seeed.cc/ai-lab/zh/tools/rk/rk3588-rk182x-rknn3-deploy) |
 | install | `pip install <wheel>` on the board, matching the RKNN3 runtime installed there. **Keep toolkit and runtime on the same version**: this board runs runtime 1.0.4 and a model compiled with the 1.0.5 toolkit failed on it with `RKNN3_ERR_FAIL`. The published SDK has moved to V1.1.0 (its docs list Python 3.10/3.12), while the records here were produced with 1.0.4 on Python 3.11.2 |
-| check | `python common/check_environment.py --backend rk1820`, or `python -c "from rknn3lite.api.rknn3_lite import RKNN3Lite; print(RKNN3Lite().get_sdk_version())"`; the vendor's `rknn3_model_test` benchmark is the device-level check |
+| check | `python3 common/check_environment.py --backend rk1820`, or `python3 -c "from rknn3lite.api.rknn3_lite import RKNN3Lite; print(RKNN3Lite().get_sdk_version())"`; the vendor's `rknn3_model_test` benchmark is the device-level check |
 | on this board | RKNN3 runtime 1.0.4, module at the M.2 slot; the model in `model/rk1820/` is compiled for **one** core, and the runtime refuses a mask that does not match, so the runners request a mask and record the one that was accepted |
 
 `common/check_osd_figure.py` is deliberately not part of this list: it needs no accelerator, only

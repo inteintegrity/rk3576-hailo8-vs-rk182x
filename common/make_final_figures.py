@@ -3,7 +3,7 @@
 Everything here is data-driven: the numbers come from the JSON files written by the benchmark
 runs, so the plots can be regenerated at any time and can never drift from the records:
 
-    python common/make_final_figures.py
+    python3 common/make_final_figures.py
 
 Outputs (results/figures/):
     multi_stream_scaling.png   aggregate throughput vs number of concurrent streams

@@ -6,7 +6,7 @@ only by the accelerator. The module sits on the board's M.2 slot, so every infer
 PCIe round trip.
 
 Usage:
-    python rk182x/rk1820/run_video_inference.py \
+    python3 rk182x/rk1820/run_video_inference.py \
         --model model/rk1820/yolo26n_rk1820_int8.rknn \
         --weight model/rk1820/yolo26n_rk1820_int8.weight \
         --video <clip.mp4> --out-dir out/rk1820

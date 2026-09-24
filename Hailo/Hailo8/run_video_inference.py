@@ -14,7 +14,7 @@ The clip is swept twice, so each layer is reported separately:
     pass 2 (annotated, writes the MP4) -> end-to-end rate, detections and the clip itself
 
 Usage:
-    python Hailo/Hailo8/run_video_inference.py \
+    python3 Hailo/Hailo8/run_video_inference.py \
         --hef model/Hailo/yolo26n_hailo8_official.hef \
         --video <clip.mp4> --out-dir out/hailo8 --depth 4
 """

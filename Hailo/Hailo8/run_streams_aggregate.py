@@ -10,7 +10,7 @@ Reported number: aggregate throughput, i.e. total processed frames per second ac
 streams (the same metric the Rockchip multi-stream benchmark reports).
 
 Usage:
-    python Hailo/Hailo8/run_streams_aggregate.py \
+    python3 Hailo/Hailo8/run_streams_aggregate.py \
         --hef model/Hailo/yolo26n_hailo8_official.hef \
         --video <clip.mp4> --streams 8 --frames 200 --depth 8 --json out.json
 

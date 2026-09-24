@@ -5,7 +5,7 @@ on-screen text by common/check_osd_figure.py (which also verifies that the copie
 results/figures/ are these same files). The frames are pasted side by side with no scaling, no
 labels and no titles - the labels and the explanation belong in the article text.
 
-    python common/make_osd_figure.py
+    python3 common/make_osd_figure.py
 
 Output: results/figures/runtime_osd.png
 """

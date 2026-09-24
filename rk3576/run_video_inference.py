@@ -5,7 +5,7 @@ decode, same annotation and the same reported timing layers, so the three annota
 differ only by the accelerator. This one runs on the SoC's own NPU, with no PCIe hop.
 
 Usage:
-    python rk3576/run_video_inference.py \
+    python3 rk3576/run_video_inference.py \
         --model model/rk3576/yolo26n_rk3576_int8.rknn \
         --video <clip.mp4> --out-dir out/rk3576
 """

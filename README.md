@@ -60,7 +60,7 @@ Model provenance, per-file hashes and the exact record edits made for this deliv
 ## Run it
 
 The three single-stream runners and the multi-stream benchmark are the four entry points. Install
-or check the backend runtimes first (`docs/ENVIRONMENT.md`, `python common/check_environment.py`),
+or check the backend runtimes first (`docs/ENVIRONMENT.md`, `python3 common/check_environment.py`),
 then run on the board. **Every runner defaults to the clip that ships with this repository**,
 `video/test.mp4` (the one behind every record in `results/`; the records name it `test_640.mp4`,
 the name it had during the runs), so the `--video` flag can simply be left out. Any other clip
@@ -68,38 +68,38 @@ works too - pass `--video <path>` and it is letterboxed to 640x640 automatically
 
 ```bash
 # Hailo-8, one stream (4 inferences in flight)
-python Hailo/Hailo8/run_video_inference.py --hef model/Hailo/yolo26n_hailo8_official.hef \
+python3 Hailo/Hailo8/run_video_inference.py --hef model/Hailo/yolo26n_hailo8_official.hef \
     --out-dir out/hailo8 --depth 4
 
 # RK3576 built-in NPU, one stream
-python rk3576/run_video_inference.py --model model/rk3576/yolo26n_rk3576_int8.rknn \
+python3 rk3576/run_video_inference.py --model model/rk3576/yolo26n_rk3576_int8.rknn \
     --out-dir out/rk3576
 
 # RK182x, one stream
-python rk182x/rk1820/run_video_inference.py --model model/rk1820/yolo26n_rk1820_int8.rknn \
+python3 rk182x/rk1820/run_video_inference.py --model model/rk1820/yolo26n_rk1820_int8.rknn \
     --weight model/rk1820/yolo26n_rk1820_int8.weight \
     --out-dir out/rk1820
 
 # Hailo-8, 8 streams on the one device (add --no-decode for the device-only rate)
-python Hailo/Hailo8/run_streams_aggregate.py --hef model/Hailo/yolo26n_hailo8_official.hef \
+python3 Hailo/Hailo8/run_streams_aggregate.py --hef model/Hailo/yolo26n_hailo8_official.hef \
     --streams 8 --frames 200 --depth 8 --json out/hailo8_8stream.json
 
 # built-in NPU / RK182x, 1/2/4/8 streams, one process and one NPU core per stream
-python common/run_video_streams_benchmark.py --backend rk3576 \
+python3 common/run_video_streams_benchmark.py --backend rk3576 \
     --model model/rk3576/yolo26n_rk3576_int8.rknn \
     --instances 1,2,4,8 --frames 200 --json out/rk3576_multi.json
-python common/run_video_streams_benchmark.py --backend rk1820 \
+python3 common/run_video_streams_benchmark.py --backend rk1820 \
     --model model/rk1820/yolo26n_rk1820_int8.rknn \
     --weight model/rk1820/yolo26n_rk1820_int8.weight \
     --instances 1,2,4,8 --frames 300 --json out/rk1820_multi.json
 
 # which runtimes are present on this board (exit code 0 = all ready)
-python common/check_environment.py
+python3 common/check_environment.py
 
 # figures and the screenshot verification (host side, from the JSON records)
-python common/make_final_figures.py
-python common/make_osd_figure.py
-python common/check_osd_figure.py
+python3 common/make_final_figures.py
+python3 common/make_osd_figure.py
+python3 common/check_osd_figure.py
 ```
 
 Requirements: [`requirements.txt`](requirements.txt) for the host side, [`docs/ENVIRONMENT.md`](docs/ENVIRONMENT.md)
@@ -147,8 +147,8 @@ re-analysed without re-running the board.
   measured on screen and the comparison of each still with frame 200 of its annotated clip:
   `results/single_stream/frame200_check.json`.
 - Both chart PNGs regenerate from the records with zero differing pixels
-  (`python common/make_final_figures.py`), and `figures/runtime_osd.png` is exactly the three stills
-  side by side (`python common/make_osd_figure.py`).
+  (`python3 common/make_final_figures.py`), and `figures/runtime_osd.png` is exactly the three stills
+  side by side (`python3 common/make_osd_figure.py`).
 - Every headline figure in these documents was recomputed from the JSON records.
 
 ## Known limits

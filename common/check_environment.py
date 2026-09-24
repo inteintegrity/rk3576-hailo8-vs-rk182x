@@ -5,9 +5,9 @@ without them is an ImportError deep inside a run; this script answers "is the ru
 which version is it" in one shot. It only imports modules and asks them for their version - it
 never loads a model, opens a device or writes anything, so it is safe to run on a live board.
 
-    python common/check_environment.py              # all three backends
-    python common/check_environment.py --backend rk3576
-    python common/check_environment.py --json out/environment.json
+    python3 common/check_environment.py              # all three backends
+    python3 common/check_environment.py --backend rk3576
+    python3 common/check_environment.py --json out/environment.json
 
 Exit code is 0 when every requested backend is ready and 1 otherwise, so it can gate a script.
 """
