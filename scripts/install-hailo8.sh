@@ -44,9 +44,11 @@ elif "${VENV_PYTHON}" -c 'import hailo_platform' >/dev/null 2>&1; then
     echo "using the HailoRT already installed on this board"
 else
     fail "HailoRT is not installed on this board and no wheel was given.
-       Install HailoRT 4.23 for this board (driver + library + hailortcli) from Hailo's
-       Developer Zone, or pass the Python wheel explicitly:
-         HAILORT_WHEEL=/path/to/hailort-4.23.0-cp311-cp311-linux_aarch64.whl bash scripts/install-hailo8.sh"
+       Install these three for HailoRT 4.23 on the board (from Hailo's Developer Zone, or copy
+       them from the machine that built this repository):
+         sudo dpkg -i hailort-pcie-driver_4.23.0_all.deb hailort_4.23.0_arm64.deb   # driver + library + hailortcli
+         HAILORT_WHEEL=/path/to/hailort-4.23.0-cp311-cp311-linux_aarch64.whl bash scripts/install-hailo8.sh
+       Then check the card reports itself:  hailortcli fw-control identify"
 fi
 
 if ! "${VENV_PYTHON}" -c 'import numpy, cv2' >/dev/null 2>&1; then

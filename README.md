@@ -18,7 +18,6 @@ every stream at its full rate rather than adding capacity. Full write-ups:
 [`docs/REPORT.md`](docs/REPORT.md) (Chinese, all tables),
 [`docs/ARTICLE_zh.md`](docs/ARTICLE_zh.md), [`docs/ARTICLE_en.md`](docs/ARTICLE_en.md).
 
-
 ## Run it
 
 On the board, one triple per backend - install once, then run any clip:

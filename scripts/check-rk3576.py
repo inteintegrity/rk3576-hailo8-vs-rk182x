@@ -39,9 +39,14 @@ def probe_runtime(report: Report) -> bool:
                       "not found; it ships with the board's firmware (RKNPU2 runtime)")
 
     driver = []
-    for path in ("/dev/rknpu", "/sys/module/rknpu", "/sys/kernel/debug/rknpu"):
-        if Path(path).exists():
-            driver.append(path)
+    for path in ("/dev/rknpu", "/sys/module/rknpu"):
+        # debugfs nodes such as /sys/kernel/debug/rknpu are root-only: exists() raises
+        # PermissionError there, so every probe path is stat'ed inside a try
+        try:
+            if Path(path).exists():
+                driver.append(path)
+        except OSError as error:
+            driver.append(f"{path} ({type(error).__name__})")
     modules = run(["lsmod"]) or ""
     if "rknpu" in modules:
         driver.append("rknpu kernel module")
