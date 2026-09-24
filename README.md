@@ -137,7 +137,7 @@ re-analysed without re-running the board.
 - The three model files match the `*_sha256` values stored inside the records, and every runner
   recomputes and prints those hashes at run time (`model/README.md`).
 - `video/test.mp4` matches `input.video_sha256` in all three records, i.e. the shipped records
-  were produced on the shipped clip (`video/README.md`).
+  were produced on the shipped clip (`video/test.mp4`, 640x640, 394 frames, 30 fps).
 - The copied records were checked field by field against the source project: no timing, per-frame
   detection, frame count or hash differs. The description/naming edits that were made are listed in
   `results/README.md`.
