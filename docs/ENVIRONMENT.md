@@ -49,8 +49,9 @@ bash scripts/run-rk3576.sh         # runs the sample clip through that venv
 The install scripts need no network: the RKNNLite2 wheel ships in `wheels/`, and the venvs are
 created with `--system-site-packages` so the board's numpy/OpenCV and vendor runtimes are reused.
 Each check verifies aarch64, Python 3.11, the Python binding, the driver and device, the model
-files and the sample clip (against `checksums.sha256`), and then runs **one real inference** on one
-frame of the sample clip; the exit code is 0 only when that succeeds. No check ever falls back to
+files and the sample clip (against `checksums.sha256`, via `scripts/verify-checksums.py`), and then
+runs **one real inference** on one frame of the sample clip; the exit code is 0 only when that
+succeeds. No check ever falls back to
 the system Python: the run scripts refuse to start if their venv is missing.
 
 ### Hailo-8

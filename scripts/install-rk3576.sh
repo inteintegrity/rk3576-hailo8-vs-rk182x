@@ -27,7 +27,7 @@ PYTHON_TAG="$("${PYTHON_BIN}" -c 'import sys; print(f"{sys.version_info.major}.{
 [ -f "${WHEEL}" ] || fail "the bundled RKNNLite2 wheel is missing: ${WHEEL}"
 
 echo "verifying the shipped model, wheel and sample clip against checksums.sha256"
-(cd "${PROJECT_DIR}" && sha256sum -c --quiet checksums.sha256) || fail "checksums.sha256 does not match the shipped files"
+"${PYTHON_BIN}" "${PROJECT_DIR}/scripts/verify-checksums.py" --quiet || fail "the shipped files do not match checksums.sha256"
 
 if [ ! -d "${VENV_DIR}" ]; then
     echo "creating ${VENV_DIR}"

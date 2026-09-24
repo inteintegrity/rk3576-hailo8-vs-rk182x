@@ -170,8 +170,8 @@ re-analysed without re-running the board.
 - `video/test.mp4` matches `input.video_sha256` in all three records, i.e. the shipped records
   were produced on the shipped clip (`video/test.mp4`, 640x640, 394 frames, 30 fps).
 - `checksums.sha256` covers the four model files, the bundled RKNNLite2 wheel and the sample clip;
-  `sha256sum -c checksums.sha256` verifies them, and every install script runs it before touching
-  the environment. Each `scripts/check-*.py` ends with one real inference on the sample clip.
+  `python3 scripts/verify-checksums.py` checks them (line-ending tolerant, unlike `sha256sum -c`),
+  and every install script runs exactly that before touching the environment. Each `scripts/check-*.py` ends with one real inference on the sample clip.
 - The copied records were checked field by field against the source project: no timing, per-frame
   detection, frame count or hash differs. The description/naming edits that were made are listed in
   `results/README.md`.

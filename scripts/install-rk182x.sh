@@ -27,7 +27,7 @@ PYTHON_TAG="$("${PYTHON_BIN}" -c 'import sys; print(f"{sys.version_info.major}.{
 "${PYTHON_BIN}" -c 'import venv' >/dev/null 2>&1 || fail "the venv module is missing; run: sudo apt install -y python3-venv"
 
 echo "verifying the shipped model, weight and sample clip against checksums.sha256"
-(cd "${PROJECT_DIR}" && sha256sum -c --quiet checksums.sha256) || fail "checksums.sha256 does not match the shipped files"
+"${PYTHON_BIN}" "${PROJECT_DIR}/scripts/verify-checksums.py" --quiet || fail "the shipped files do not match checksums.sha256"
 
 if [ ! -d "${VENV_DIR}" ]; then
     echo "creating ${VENV_DIR}"
