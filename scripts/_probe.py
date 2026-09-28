@@ -15,6 +15,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+# The check scripts import the shared host-side modules (letterbox, decode, the Hailo pipeline,
+# the RKNN helpers) from common/; adding it here covers all three of them.
+COMMON_DIR = Path(__file__).resolve().parent.parent / "common"
+if COMMON_DIR.is_dir() and str(COMMON_DIR) not in sys.path:
+    sys.path.insert(0, str(COMMON_DIR))
+
 ARCHES = ("aarch64", "arm64")
 REQUIRED_PYTHON = (3, 11)
 SAMPLE_CLIP = "video/test.mp4"
