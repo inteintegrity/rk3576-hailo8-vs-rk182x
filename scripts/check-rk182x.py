@@ -123,7 +123,8 @@ def one_frame_inference(report: Report, root: Path) -> bool:
         except Exception:
             pass
 
-    scales = ",".join(str(d["stride"]) for d in described)
+    # six tensors describe three scales; the box and score heads of one scale share its stride
+    scales = ",".join(dict.fromkeys(str(d["stride"]) for d in described))
     return report.check("one-frame inference", True,
                         f"core_mask {hex(mask)}, 6 heads (stride {scales}), {len(scores)} detection(s) "
                         f"from frame 1 of {frames} @ {fps:.0f} fps")
